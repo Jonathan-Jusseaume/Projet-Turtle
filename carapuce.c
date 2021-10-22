@@ -129,18 +129,13 @@ int checkIfParalized(Game game);
 
 
 int main(void) {
-    fprintf(stderr, "STEP\n");
     Game game = initGame();
     int nbTours = 0;
-    fprintf(stderr, "STEP\n");
     updateGame(&game);
-    fprintf(stderr, "STEP\n");
     fprintf(stdout, "NOBLIND\n");
     fflush(stdout);
-    fprintf(stderr, "STEP\n");
     int number;
     if (checkIfBlinded(game) == FALSE) {
-        fprintf(stderr, "STEP\n");
         fprintf(stdout, "REVEALL %d %d\n", 6, MOST_LEFT);
         fflush(stdout);
         char buffer[2];
@@ -160,7 +155,6 @@ int main(void) {
     fprintf(stdout, "NOPARALYZE\n");
     fflush(stdout);
     if (checkIfParalized(game) == FALSE) {
-        fprintf(stderr, "|%d|\n", game.players[game.numberPlayers].turtle.direction);
         if (game.players[game.myNumero].turtle.direction == LEFT) {
             fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; ROTATE 1; ROTATE 1; PASS\n", number);
             fflush(stdout);
@@ -178,10 +172,8 @@ int main(void) {
     }
     nbTours++;
     updateGame(&game);
-    fprintf(stderr, "STEP\n");
     fprintf(stdout, "NOBLIND\n");
     fflush(stdout);
-    fprintf(stderr, "STEP\n");
     fflush(stderr);
     int number2 = -1;
     if (checkIfBlinded(game) == FALSE) {
@@ -193,7 +185,6 @@ int main(void) {
         fgets(buffer, 3, stdin);
         fgets(buffer, 3, stdin);
         number2 = atoi(buffer);
-        fprintf(stderr, "BUFFER %s\n", buffer);
         if (number2 == -1) {
             for (int i = 0; i < NUMBER_COLUMNS; i++) {
                 game.grid[6][i] = WHITE;
@@ -225,13 +216,6 @@ int main(void) {
         fflush(stdout);
 
         nbTours++;
-        for (int i = 0; i < NUMBER_LINES; i++) {
-            displayArray(game.grid[i], NUMBER_COLUMNS);
-        }
-        for (int i = 0; i < game.numberPlayers; i++) {
-            fprintf(stderr, "J%d, x=%d, y=%d, score=%d \n", game.players[i].number, game.players[i].turtle.position.x,
-                    game.players[i].turtle.position.y, game.players[i].score);
-        }
     }
 
 }
@@ -314,11 +298,9 @@ void updateGame(Game *game) {
     }
     fgets(buffer, 15, stdin);
     int nbCells = atoi(buffer);
-    fprintf(stderr, "cell=%d\n", nbCells);
     for (int i = 0; i < nbCells; i++) {
         fgets(buffer, 15, stdin);
         int *cellInfo = parseLine(buffer);
-        fprintf(stderr, "cell j=%d l=%d, c=%d \n", cellInfo[0], cellInfo[1], cellInfo[2]);
         game->grid[cellInfo[1]][cellInfo[2]] = CHECKED;
         displayArray(game->grid[cellInfo[1]], 12);
     }
@@ -336,34 +318,28 @@ void updateGame(Game *game) {
 
 
 int checkIfBlinded(Game game) {
-    fprintf(stderr, "%d \n", game.numberPlayers);
     int rvalue = FALSE;
     for (int i = 0; i < game.numberPlayers; i++) {
-        fprintf(stderr, "%d \n", i);
         char buffer[15];
         fgets(buffer, 15, stdin);
         int *playerBlind = parseLine(buffer);
-        fprintf(stderr, "%d  %d \n", playerBlind[0], playerBlind[1]);
         if (playerBlind[0] == game.myNumero &&
             playerBlind[1] == BLINDED) {
-            rvalue=TRUE;
+            rvalue = TRUE;
         }
     }
     return rvalue;
 }
 
 int checkIfParalized(Game game) {
-    fprintf(stderr, "%d \n", game.numberPlayers);
     int rvalue = FALSE;
     for (int i = 0; i < game.numberPlayers; i++) {
-        fprintf(stderr, "%d \n", i);
         char buffer[15];
         fgets(buffer, 15, stdin);
         int *playerBlind = parseLine(buffer);
-        fprintf(stderr, "%d  %d \n", playerBlind[0], playerBlind[1]);
         if (playerBlind[0] == game.myNumero &&
             playerBlind[1] == BLINDED) {
-            rvalue=TRUE;
+            rvalue = TRUE;
         }
     }
     return rvalue;
