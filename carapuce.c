@@ -302,7 +302,6 @@ void updateGame(Game *game) {
         fgets(buffer, 15, stdin);
         int *cellInfo = parseLine(buffer);
         game->grid[cellInfo[1]][cellInfo[2]] = CHECKED;
-        displayArray(game->grid[cellInfo[1]], 12);
     }
     int i;
     for (i = 0; i < game->numberPlayers; i++) {
