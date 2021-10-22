@@ -11,19 +11,38 @@
 /*
  * Les constantes
  */
+
+/*
+ * Les valeurs booléenes
+ */
 #define TRUE 1
 #define FALSE 0
+/*
+ * Les valeurs que peuvent prendre une case
+ */
+#define CHECKED 2
 #define BLACK 1
 #define WHITE 0
+#define UNKNOWN -1
+/*
+ * Les valeurs d'orientation de la tortue
+ */
 #define LEFT 0
 #define UP 1
 #define RIGHT 2
 #define DOWN 3
+
+/*
+ * Les modes pour demander les cases 
+ */
 #define MOST_LEFT 0
 #define MOST_RIGHT 1
 #define MOST_UP 1
 #define MOST_DOWN 0
-#define UNKNOWN -1
+
+/*
+ * Le nombre de lignes et de colonnes
+ */
 #define NUMBER_LINES 12
 #define NUMBER_COLUMNS 12
 
