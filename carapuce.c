@@ -104,7 +104,7 @@ Game initGame();
  * Le MAIN
  */
 int main(void) {
-
+    perror("--LANCEMENT DU PROGRAMME: CARAPUCE EST PRÊT--");
 }
 
 /*
