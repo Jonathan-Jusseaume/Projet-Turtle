@@ -184,7 +184,6 @@ int main(void) {
         fflush(stdout);
         char buffer[5];
         fgets(buffer, 5, stdin);
-        fprintf(stderr, "Case=%s\n", buffer);
         number = atoi(buffer);
         if (number == -1) {
             for (int i = 0; i < NUMBER_COLUMNS; i++) {
@@ -335,7 +334,6 @@ void updateGame(Game *game) {
     for (int i = 0; i < game->numberPlayers; i++) {
         fgets(buffer, 15, stdin);
         int *playerInfo = parseLine(buffer);
-        fprintf(stderr, "Joueur=%d, score=%d, isRemove=%d \n", playerInfo[0], playerInfo[1], playerInfo[2]);
         game->players[i].number = playerInfo[0];
         game->players[i].score = playerInfo[1];
         game->players[i].isRemove = playerInfo[2];
@@ -343,11 +341,9 @@ void updateGame(Game *game) {
     }
     fgets(buffer, 15, stdin);
     int nbCells = atoi(buffer);
-    fprintf(stderr, "Nombre cellules=%d \n", nbCells);
     for (int i = 0; i < nbCells; i++) {
         fgets(buffer, 15, stdin);
         int *cellInfo = parseLine(buffer);
-        fprintf(stderr, "Cell %d: l=%d, c=%d \n", i, cellInfo[1], cellInfo[2]);
         game->grid[cellInfo[1]][cellInfo[2]] = CHECKED;
         free(cellInfo);
     }
@@ -358,11 +354,6 @@ void updateGame(Game *game) {
         game->players[i].turtle.position.y = playerTurtleInfo[2];
         game->players[i].turtle.direction = playerTurtleInfo[3];
         game->players[i].turtle.penIsDown = playerTurtleInfo[4];
-        fprintf(stderr, "Player: %d, Turtle: x=%d y=%d direction = %d, penIsDown=%d \n", playerTurtleInfo[0],
-                playerTurtleInfo[1],
-                playerTurtleInfo[2],
-                playerTurtleInfo[3],
-                playerTurtleInfo[4]);
         free(playerTurtleInfo);
     }
 }
@@ -370,12 +361,10 @@ void updateGame(Game *game) {
 
 int checkIfBlinded(Game game) {
     int isBlinded = FALSE;
-    fprintf(stderr, "nombreJoueurs: %d \n", game.numberPlayers);
     for (int i = 0; i < game.numberPlayers; i++) {
         char buffer[15];
         fgets(buffer, 15, stdin);
         int *playerBlind = parseLine(buffer);
-        fprintf(stderr, "joueur: %d, blind:%d \n", playerBlind[0], playerBlind[1]);
         if (playerBlind[0] == game.myNumero &&
             playerBlind[1] == BLINDED) {
             isBlinded = TRUE;
@@ -387,12 +376,10 @@ int checkIfBlinded(Game game) {
 
 int checkIfParalyzed(Game game) {
     int isParalyzed = FALSE;
-    fprintf(stderr, "nombreJoueurs: %d \n", game.numberPlayers);
     for (int i = 0; i < game.numberPlayers; i++) {
         char buffer[15];
         fgets(buffer, 15, stdin);
         int *playerParalyzed = parseLine(buffer);
-        fprintf(stderr, "joueur: %d, paralyzed:%d \n", playerParalyzed[0], playerParalyzed[1]);
         if (playerParalyzed[0] == game.myNumero &&
             playerParalyzed[1] == PARALYZED) {
             isParalyzed = TRUE;
