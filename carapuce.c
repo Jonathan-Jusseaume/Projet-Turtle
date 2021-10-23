@@ -30,7 +30,6 @@
 /**
  * Les valeurs que peuvent prendre une case
  */
-#define CHECKED 2
 #define BLACK 1
 #define WHITE 0
 #define UNKNOWN -1
@@ -96,11 +95,13 @@ typedef struct Player {
 
 /**
  * Structure contenant toutes les informations essentielles de la partie.
- * Les informations que je possède sur la grille, par défaut toutes les cases valent UNKNOWN,
+ * Les informations que je possède sur la grille, par défaut toutes les cases valent UNKNOWN, une grille
+ * qui mémorise si la case a déjà été cochée ou non par un joueur
  * la liste des joueurs, le numéro de notre joueur, notre tortue, ainsi que le nombre de joueurs
  */
 typedef struct Game {
     int **grid;
+    int **gridChecked;
     Player *players;
     int numberPlayers;
     int myNumero;
@@ -167,17 +168,60 @@ int checkIfBlinded(Game game);
 int checkIfParalyzed(Game game);
 
 /**
+ * Met à jour la partie qui a l'adresse passé en paramètre et notamment sa grille
+ * notamment en se basant sur le fait que le si sur une même ligne/colonne il y a deux cases noires
+ * séparées alors tout ce qui est entre les deux sont des cases noires
+ * @param game
+ */
+void updateGrid(Game *game);
+
+/**
  * Main de l'application, il démarre par une initialisation de la partie,
  * puis notre IA va ensuite jouer les tours
  * @return 0 s'il n'y a pas eu de problèmes
  */
 int main(void) {
-    fprintf(stderr, "CARAPUCE A L'ATTAQUE");
+    fprintf(stderr, "CARAPUCE A L'ATTAQUE \n");
+    /*
+     * On initialise notre partie
+     */
     Game game = initGame();
-    int nbTours = 0;
-    updateGame(&game);
-    fprintf(stdout, "NOBLIND\n");
-    fflush(stdout);
+    int nbTurns = 0;
+
+    /*
+     * Cette variable correspond à la ligne ou la colonne que l'on va
+     * cibler, au début c'est la numéro 6 car elle est presque au milieu donc on est sur de voir
+     * des cases noires
+     */
+    int target = 6;
+    /*
+     * Notre comportement sur tous les tours
+     */
+    while (nbTurns < 150) {
+        /*
+         * On récupère les informations de la partie
+         */
+        updateGame(&game);
+        /*
+         * On ne joue pas avec l'aveuglement
+         */
+        fprintf(stdout, "NOBLIND\n");
+        fflush(stdout);
+        int isBlinded = checkIfBlinded(game);
+        /*
+         * Si on est pas aveuglé alors on peut réveler une case
+         */
+        if (isBlinded == FALSE) {
+
+        } else {
+            fprintf(stdout, "NOREVEAL\n");
+            fflush(stdout);
+        }
+
+
+        nbTurns++;
+    }
+
     int number;
     if (checkIfBlinded(game) == FALSE) {
         fprintf(stdout, "REVEALL %d %d\n", 6, MOST_LEFT);
@@ -320,10 +364,17 @@ Game initGame() {
     game.numberPlayers = array[0];
     game.players = (Player *) malloc(game.numberPlayers * sizeof(Player));
     game.grid = (int **) malloc(NUMBER_LINES * sizeof(int *));
+    game.gridChecked = (int **) malloc(NUMBER_LINES * sizeof(int *));
     for (int i = 0; i < NUMBER_LINES; i++) {
         game.grid[i] = (int *) malloc(NUMBER_COLUMNS * sizeof(int));
+        game.gridChecked[i] = (int *) malloc(NUMBER_COLUMNS * sizeof(int));
         for (int j = 0; j < NUMBER_COLUMNS; j++) {
-            game.grid[i][j] = UNKNOWN;
+            if (i == 0 || i == NUMBER_LINES - 1 || j == 0 || j == NUMBER_COLUMNS - 1) {
+                game.grid[i][j] = WHITE;
+            } else {
+                game.grid[i][j] = UNKNOWN;
+            }
+            game.gridChecked[i] = FALSE;
         }
     }
     free(array);
@@ -348,7 +399,8 @@ void updateGame(Game *game) {
         fgets(buffer, 15, stdin);
         int *cellInfo = parseLine(buffer);
         fprintf(stderr, "Cell %d: l=%d, c=%d \n", i, cellInfo[1], cellInfo[2]);
-        game->grid[cellInfo[1]][cellInfo[2]] = CHECKED;
+        game->grid[cellInfo[1]][cellInfo[2]] = cellInfo[3];
+        game->gridChecked[cellInfo[1]][cellInfo[2]] = TRUE;
         free(cellInfo);
     }
     for (int i = 0; i < game->numberPlayers; i++) {
@@ -400,4 +452,8 @@ int checkIfParalyzed(Game game) {
         free(playerParalyzed);
     }
     return isParalyzed;
+}
+
+void updateGrid(Game *game) {
+
 }
