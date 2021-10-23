@@ -172,7 +172,7 @@ int checkIfParalyzed(Game game);
  * @return 0 s'il n'y a pas eu de problèmes
  */
 int main(void) {
-    fprintf(stderr, "CARAPUCE A L'ATTAQUE");
+    fprintf(stderr, "CARAPUCE A L'ATTAQUE \n");
     Game game = initGame();
     int nbTours = 0;
     updateGame(&game);
