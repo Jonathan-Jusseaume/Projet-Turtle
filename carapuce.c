@@ -2,6 +2,14 @@
  * Fichier crée par JUSSEAUME Jonathan le 21/10/2021
  */
 
+/**
+ * @todo Faire une méthode qui update la grille et qui permet de deviner des cases blanches et des cases noires en fonction de celles révélées pour l'instant
+ */
+
+/**
+ * @todo Faire en sorte de se déplacer selon les informations que l'on a, TP si on a rien d'intéressant sur notre ligne, si on a des éléments intéressants, on paralyse quelqu'un qui a des bons éléments
+ */
+
 
 /**
  * Les librairies
@@ -181,7 +189,7 @@ void updateGrid(Game *game);
  * @return 0 s'il n'y a pas eu de problèmes
  */
 int main(void) {
-    fprintf(stderr, "CARAPUCE A L'ATTAQUE \n");
+    fprintf(stderr, "CARABAFFE A L'ATTAQUE \n");
     /*
      * On initialise notre partie
      */
