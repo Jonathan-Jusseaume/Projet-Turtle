@@ -38,8 +38,8 @@
 /**
  * Les valeurs que peuvent prendre une case
  */
-#define BLACK 1
-#define WHITE 0
+#define WHITE 1
+#define BLACK 0
 #define UNKNOWN -1
 
 /**
@@ -184,11 +184,42 @@ int checkIfParalyzed(Game game);
 void updateGrid(Game *game);
 
 /**
+ * Main pour faire des tests de fonction
+ * @return
+ */
+int main(void) {
+    fprintf(stderr, "CARABAFFE A L'ATTAQUE \n");
+    Game game = initGame();
+    int nbTurns = 0;
+    while (nbTurns < 150) {
+        updateGame(&game);
+        fprintf(stdout, "NOBLIND\n");
+        fflush(stdout);
+        checkIfBlinded(game);
+        fprintf(stdout, "NOREVEAL\n");
+        fflush(stdout);
+        for (int i = 0; i < NUMBER_LINES; i++) {
+            displayArray(game.grid[i], NUMBER_COLUMNS);
+        }
+        fprintf(stdout, "NOPARALYZE\n");
+        fflush(stdout);
+        checkIfParalyzed(game);
+        fprintf(stdout, "PASS\n");
+        fflush(stdout);
+
+
+        nbTurns++;
+    }
+
+    return 0;
+}
+
+/**
  * Main de l'application, il démarre par une initialisation de la partie,
  * puis notre IA va ensuite jouer les tours
  * @return 0 s'il n'y a pas eu de problèmes
  */
-int main(void) {
+int main2(void) {
     fprintf(stderr, "CARABAFFE A L'ATTAQUE \n");
     /*
      * On initialise notre partie
@@ -201,7 +232,6 @@ int main(void) {
      * cibler, au début c'est la numéro 6 car elle est presque au milieu donc on est sur de voir
      * des cases noires
      */
-    int target = 6;
     /*
      * Notre comportement sur tous les tours
      */
@@ -224,6 +254,12 @@ int main(void) {
         } else {
             fprintf(stdout, "NOREVEAL\n");
             fflush(stdout);
+        }
+        /*
+         * On display la map actuelle
+         */
+        for (int i = 0; i < NUMBER_LINES; i++) {
+            displayArray(game.grid[i], NUMBER_COLUMNS);
         }
 
 
@@ -267,7 +303,7 @@ int main(void) {
         }
 
     }
-    nbTours++;
+    nbTurns++;
     fflush(stdout);
     updateGame(&game);
     fprintf(stdout, "NOBLIND\n");
@@ -298,10 +334,10 @@ int main(void) {
         fprintf(stdout, "MOVE %d\n", number2 - number);
         fflush(stdout);
     }
-    nbTours++;
+    nbTurns++;
 
 
-    while (nbTours < 150) {
+    while (nbTurns < 150) {
         fprintf(stdout, "NOBLIND\n");
         fflush(stdout);
         fprintf(stdout, "NOREVEAL\n");
@@ -311,7 +347,7 @@ int main(void) {
         fprintf(stdout, "PASS\n");
         fflush(stdout);
 
-        nbTours++;
+        nbTurns++;
     }
     return 0;
 }
@@ -382,7 +418,7 @@ Game initGame() {
             } else {
                 game.grid[i][j] = UNKNOWN;
             }
-            game.gridChecked[i] = FALSE;
+            game.gridChecked[i][j] = FALSE;
         }
     }
     free(array);
@@ -406,10 +442,14 @@ void updateGame(Game *game) {
     for (int i = 0; i < nbCells; i++) {
         fgets(buffer, 15, stdin);
         int *cellInfo = parseLine(buffer);
-        fprintf(stderr, "Cell %d: l=%d, c=%d \n", i, cellInfo[1], cellInfo[2]);
+        fprintf(stderr, "Cell %d: l=%d, c=%d, color=%d \n", i, cellInfo[1], cellInfo[2], cellInfo[3]);
+        fprintf(stderr, "STEP 1\n");
         game->grid[cellInfo[1]][cellInfo[2]] = cellInfo[3];
+        fprintf(stderr, "STEP 2\n");
         game->gridChecked[cellInfo[1]][cellInfo[2]] = TRUE;
+        fprintf(stderr, "STEP 3\n");
         free(cellInfo);
+        fprintf(stderr, "STEP 4\n");
     }
     for (int i = 0; i < game->numberPlayers; i++) {
         fgets(buffer, 15, stdin);
@@ -425,6 +465,7 @@ void updateGame(Game *game) {
                 playerTurtleInfo[4]);
         free(playerTurtleInfo);
     }
+    updateGrid(game);
 }
 
 
@@ -463,5 +504,77 @@ int checkIfParalyzed(Game game) {
 }
 
 void updateGrid(Game *game) {
+    fprintf(stderr, "J'update la grille \n");
+    int hasChangedSomething = FALSE;
+    /*
+     * On regarde les lignes d'abord
+     */
+    for (int i = 0; i < NUMBER_LINES; i++) {
+        int indexBlackBlock = -1;
+        for (int j = 0; j < NUMBER_COLUMNS; j++) {
+            if (game->grid[i][j] == BLACK) {
+                /*
+                 * Cas où on détecte pour la première fois une case noire
+                 */
+                if (indexBlackBlock == -1) {
+                    indexBlackBlock = j;
+                } else {
+                    /*
+                     * S'il y a plus d'une case d'écart entre deux cases noires
+                     * alors il faut combler le trou par des cases noires, on a donc
+                     * modifié des cases
+                     */
+                    if (j - indexBlackBlock > 1) {
+                        for (int k = indexBlackBlock + 1; k < j; k++) {
+                            game->grid[i][k] = BLACK;
+                        }
+                        hasChangedSomething = TRUE;
+                    }
+                    indexBlackBlock = j;
+                }
+            }
+        }
+    }
 
+    /*
+     * On fait la même chose mais pour les colonnes
+     */
+    for (int j = 0; j < NUMBER_COLUMNS; j++) {
+        int indexBlackBlock = -1;
+        for (int i = 0; i < NUMBER_LINES; i++) {
+            if (game->grid[i][j] == BLACK) {
+                /*
+                 * Cas où on détecte pour la première fois une case noire
+                 */
+                if (indexBlackBlock == -1) {
+                    indexBlackBlock = i;
+                } else {
+                    /*
+                     * S'il y a plus d'une case d'écart entre deux cases noires
+                     * alors il faut combler le trou par des cases noires, on a donc
+                     * modifié des cases
+                     */
+                    if (i - indexBlackBlock > 1) {
+                        for (int k = indexBlackBlock + 1; k < i; k++) {
+                            game->grid[k][j] = BLACK;
+                        }
+                        hasChangedSomething = TRUE;
+                    }
+                    indexBlackBlock = i;
+                }
+            }
+        }
+    }
+
+
+
+
+    /*
+     * Si on a changé quelque chose peut être que l'on a trouvé des informations
+     * intéressantes sur une autre colonne ou ligne, on lance donc une récursion jusqu'à ce qu'on ne
+     * détecte plus aucune modification
+     */
+    if (hasChangedSomething == TRUE) {
+        updateGrid(game);
+    }
 }
