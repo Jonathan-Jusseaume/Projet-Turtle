@@ -3,10 +3,6 @@
  */
 
 /**
- * @todo Faire une méthode qui update la grille et qui permet de deviner des cases blanches et des cases noires en fonction de celles révélées pour l'instant
- */
-
-/**
  * @todo Faire en sorte de se déplacer selon les informations que l'on a, TP si on a rien d'intéressant sur notre ligne, si on a des éléments intéressants, on paralyse quelqu'un qui a des bons éléments
  */
 
@@ -183,11 +179,12 @@ int checkIfParalyzed(Game game);
  */
 void updateGrid(Game *game);
 
+
 /**
  * Main pour faire des tests de fonction
  * @return
  */
-int main(void) {
+int mainBrouillon(void) {
     fprintf(stderr, "CARABAFFE A L'ATTAQUE \n");
     Game game = initGame();
     int nbTurns = 0;
@@ -211,27 +208,6 @@ int main(void) {
         nbTurns++;
     }
 
-    return 0;
-}
-
-/**
- * Main de l'application, il démarre par une initialisation de la partie,
- * puis notre IA va ensuite jouer les tours
- * @return 0 s'il n'y a pas eu de problèmes
- */
-int main2(void) {
-    fprintf(stderr, "CARABAFFE A L'ATTAQUE \n");
-    /*
-     * On initialise notre partie
-     */
-    Game game = initGame();
-    int nbTurns = 0;
-
-    /*
-     * Cette variable correspond à la ligne ou la colonne que l'on va
-     * cibler, au début c'est la numéro 6 car elle est presque au milieu donc on est sur de voir
-     * des cases noires
-     */
     /*
      * Notre comportement sur tous les tours
      */
@@ -336,18 +312,108 @@ int main2(void) {
     }
     nbTurns++;
 
+    return 0;
+}
 
-    while (nbTurns < 150) {
+/**
+ * Main de l'application, il démarre par une initialisation de la partie,
+ * puis notre IA va ensuite jouer les tours
+ * @return 0 s'il n'y a pas eu de problèmes
+ */
+int main(void) {
+    fprintf(stderr, "CARABAFFE A L'ATTAQUE \n");
+    Game game = initGame();
+    int nbTours = 0;
+    updateGame(&game);
+    fprintf(stdout, "NOBLIND\n");
+    fflush(stdout);
+    int number;
+    if (checkIfBlinded(game) == FALSE) {
+        fprintf(stdout, "REVEALL %d %d\n", 6, MOST_LEFT);
+        fflush(stdout);
+        char buffer[5];
+        fgets(buffer, 5, stdin);
+        number = atoi(buffer);
+        if (number == -1) {
+            for (int i = 0; i < NUMBER_COLUMNS; i++) {
+                game.grid[6][i] = WHITE;
+            }
+        } else {
+            for (int i = 0; i < number; i++) {
+                game.grid[6][i] = WHITE;
+            }
+            game.grid[6][number] = BLACK;
+        }
+    }
+    fprintf(stdout, "NOPARALYZE\n");
+    fflush(stdout);
+    if (checkIfParalyzed(game) == FALSE) {
+        if (game.players[game.myNumero].turtle.direction == LEFT) {
+            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; ROTATE 1; ROTATE 1; PASS\n", number);
+            fflush(stdout);
+        } else if (game.players[game.myNumero].turtle.direction == RIGHT) {
+            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; PASS\n", number);
+            fflush(stdout);
+        } else if (game.players[game.myNumero].turtle.direction == UP) {
+            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; ROTATE 1; PASS\n", number);
+            fflush(stdout);
+        } else if (game.players[game.myNumero].turtle.direction == DOWN) {
+            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; ROTATE 0; PASS\n", number);
+            fflush(stdout);
+        }
+
+    }
+    nbTours++;
+    fflush(stdout);
+    updateGame(&game);
+    fprintf(stdout, "NOBLIND\n");
+    fflush(stdout);
+    fflush(stderr);
+    int number2 = -1;
+    if (checkIfBlinded(game) == FALSE) {
+        fprintf(stdout, "REVEALL %d %d\n", 6, 1);
+        fflush(stdout);
+        char buffer[5];
+        fflush(stdin);
+        fgets(buffer, 5, stdin);
+        number2 = atoi(buffer);
+        if (number2 == -1) {
+            for (int i = 0; i < NUMBER_COLUMNS; i++) {
+                game.grid[6][i] = WHITE;
+            }
+        } else {
+            for (int i = NUMBER_COLUMNS - 1; i > number2; i--) {
+                game.grid[6][i] = WHITE;
+            }
+            game.grid[6][number2] = BLACK;
+        }
+    }
+    int numberIA;
+    for (int i = 0; i < game.numberPlayers; i++) {
+        if (game.players[i].number != game.myNumero) {
+            numberIA = game.players[i].number;
+        }
+    }
+    fprintf(stdout, "PARALYZE %d\n", numberIA);
+    fflush(stdout);
+    if (checkIfParalyzed(game) == FALSE) {
+        fprintf(stdout, "MOVE %d\n", number2 - number);
+        fflush(stdout);
+    }
+    nbTours++;
+
+
+    while (nbTours < 150) {
         fprintf(stdout, "NOBLIND\n");
         fflush(stdout);
         fprintf(stdout, "NOREVEAL\n");
         fflush(stdout);
-        fprintf(stdout, "NOPARALYZE\n");
+        fprintf(stdout, "PARALYZE %d\n", numberIA);
         fflush(stdout);
         fprintf(stdout, "PASS\n");
         fflush(stdout);
 
-        nbTurns++;
+        nbTours++;
     }
     return 0;
 }
