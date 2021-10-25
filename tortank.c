@@ -179,6 +179,53 @@ int checkIfParalyzed(Game game);
  */
 void updateGrid(Game *game);
 
+/**
+ * Renvoie la direction par rapport à notre tortue pour marquer des points
+ * @param game la situation de la partie actuelle
+ * @return -1 s'il n'y a aucune bonne direction pour marquer des points, 0 s'il faut aller à gauche,
+ * 1 s'il faut aller en haut, 2 s'il faut aller à droite, 3 s'il faut aller en bas
+ */
+int directionToScorePoints(Game game);
+
+/**
+ * Renvoie notre joueur
+ * @param game la partie duquelle on récupère notre joueur
+ * @return notre joueur avec notamment sa tortue
+ */
+Player getMyPlayer(Game game);
+
+/**
+ * Renvoie le nombre de points situés à la gauche d'une position
+ * @param game la situation de la partie actuelle
+ * @param position notre position
+ * @return le nombre de points à marquer sur notre gauche
+ */
+int numberPointsAtMyLeft(Game game, Position position);
+
+/**
+ * Renvoie le nombre de points situés à la droite d'une position
+ * @param game la situation de la partie actuelle
+ * @param position notre position
+ * @return le nombre de points à marquer sur notre droite
+ */
+int numberPointsAtMyRight(Game game, Position position);
+
+/**
+ * Renvoie le nombre de points situés en haut d'une position
+ * @param game la situation de la partie actuelle
+ * @param position notre position
+ * @return le nombre de points à marquer au dessus de nous
+ */
+int numberPointsUp(Game game, Position position);
+
+/**
+ * Renvoie le nombre de points situés en bas d'une position
+ * @param game la situation de la partie actuelle
+ * @param position notre position
+ * @return le nombre de points à marquer en dessous de nous
+ */
+int numberPointsDown(Game game, Position position);
+
 
 /**
  * Main pour faire des tests de fonction
@@ -321,9 +368,85 @@ int mainBrouillon(void) {
  * @return 0 s'il n'y a pas eu de problèmes
  */
 int main(void) {
-    fprintf(stderr, "CARABAFFE A L'ATTAQUE \n");
+    fprintf(stderr, "TORTANK A L'ATTAQUE \n");
     Game game = initGame();
-    int nbTours = 0;
+    int nbTurns = 0;
+    /*
+     * Notre comportement sur tous les tours
+     */
+    while (nbTurns < 150) {
+        /*
+         * On récupère les informations de la partie
+         */
+        updateGame(&game);
+        /*
+         * On ne joue pas avec l'aveuglement
+         */
+        fprintf(stdout, "NOBLIND\n");
+        fflush(stdout);
+        int isBlinded = checkIfBlinded(game);
+        /*
+         * Si on est pas aveuglé alors on peut réveler une case
+         */
+        if (isBlinded == FALSE) {
+            /**
+             * FIXME
+             *  - faire une méthode qui renvoie la chaine à envoyer au jeu
+             *  - il faut d'abord s'informer dans la proximité, notamment si on est déjà sur une case noire mais qu'on connait pas où sont les autres cases noires de notre ligne/colonne
+             *  - dans les cas où il n'y a vraiment rien à retirer depuis notre position, il faut s'intéresser aux positions centrales et faire par rapport aux informations qu'on a; regarder ligne/colonne 6 puis 7 puis 5 puis 8 puis 4 jusqu'a trouver quelque chose d'intéressant
+             *  - c'est une des parties les plus complexes quand la grille est bien remplie et qu'on a déjà repéré des cases noires sur une ligne par exemple, il faut faire en fonction du nombre d'unknown dans la grille, 4 unknown dans une direction est excellent par exemple
+             *  - ensuite on récupère le résultat obtenue et on met à jour la grille
+             *  - faire une structure qui renvoit le nombre de cases noires, de cases blanches et unknown à gauche d'une position par exemple (fonction numberPointsAtLeft devient informationsLeft et renvoie un objet de type InformationFromPosition)
+             */
+        } else {
+            fprintf(stdout, "NOREVEAL\n");
+            fflush(stdout);
+        }
+        /*
+         * On display la map actuelle
+         */
+        for (int i = 0; i < NUMBER_LINES; i++) {
+            displayArray(game.grid[i], NUMBER_COLUMNS);
+        }
+
+        /**
+         * FIXME
+         *  - on place en mode déplacement, regarder autour de nous voir la meilleure position possible pour éviter de gacher une TP qui coute des points,
+         *  - s'il y a une direction correcte on fait des tours sur nous même pour aller jusqu'a elle et courir pour marquer des points
+         *  - si aucune direction correcte se dessine, tp sur une case noire où on vérifie qu'il y a beaucoup de cases noires possibles en un déplacement et on court pour marquer des points
+         *  - si on a vraiment rien à porter même avec un TP alors on PASS notre tour
+         */
+
+
+        nbTurns++;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     updateGame(&game);
     fprintf(stdout, "NOBLIND\n");
     fflush(stdout);
@@ -632,9 +755,6 @@ void updateGrid(Game *game) {
         }
     }
 
-
-
-
     /*
      * Si on a changé quelque chose peut être que l'on a trouvé des informations
      * intéressantes sur une autre colonne ou ligne, on lance donc une récursion jusqu'à ce qu'on ne
@@ -643,4 +763,106 @@ void updateGrid(Game *game) {
     if (hasChangedSomething == TRUE) {
         updateGrid(game);
     }
+}
+
+int directionToScorePoints(Game game) {
+    Position myPosition = getMyPlayer(game).turtle.position;
+    int direction = -1;
+    int bestScore = 0;
+    /*
+     * On regarde dans toutes les directions le score possible
+     * et on retient le meilleur score, on va dans la direction du meilleure score
+     * obtenue, si aucune ligne ne rapporte de points on renvoie -1
+     */
+    int leftScore = numberPointsAtMyLeft(game, myPosition);
+    if (leftScore > bestScore) {
+        bestScore = leftScore;
+        direction = LEFT;
+    }
+    int rightScore = numberPointsAtMyRight(game, myPosition);
+    if (rightScore > bestScore) {
+        bestScore = rightScore;
+        direction = RIGHT;
+    }
+    int upScore = numberPointsUp(game, myPosition);
+    if (upScore > bestScore) {
+        bestScore = upScore;
+        direction = UP;
+    }
+    int downScore = numberPointsDown(game, myPosition);
+    if (downScore > bestScore) {
+        bestScore = downScore;
+        direction = DOWN;
+    }
+    return direction;
+}
+
+Player getMyPlayer(Game game) {
+    Player myPlayer;
+    for (int i = 0; i < game.numberPlayers; i++) {
+        if (game.players[i].number == game.myNumero) {
+            myPlayer = game.players[i];
+        }
+    }
+    return myPlayer;
+}
+
+int numberPointsAtMyLeft(Game game, Position position) {
+    int score = 0;
+    for (int i = position.y; i > 0; i--) {
+        /*
+         * Si à notre gauche, on a une case noire qui n'est pas déjà cochée
+         * alors on augmente le score de gauche de 1
+         */
+        if (game.grid[position.x][i] == BLACK
+            && game.gridChecked[position.x][i] == FALSE) {
+            score++;
+        }
+    }
+    return score;
+}
+
+int numberPointsAtMyRight(Game game, Position position) {
+    int score = 0;
+    for (int i = position.y; i < NUMBER_COLUMNS; i++) {
+        /*
+         * Si à notre droite, on a une case noire qui n'est pas déjà cochée
+         * alors on augmente le score de gauche de 1
+         */
+        if (game.grid[position.x][i] == BLACK
+            && game.gridChecked[position.x][i] == FALSE) {
+            score++;
+        }
+    }
+    return score;
+}
+
+int numberPointsUp(Game game, Position position) {
+    int score = 0;
+    for (int i = position.x; i > 0; i--) {
+        /*
+         * Si au-dessus de nous, on a une case noire qui n'est pas déjà cochée
+         * alors on augmente le score de gauche de 1
+         */
+        if (game.grid[i][position.y] == BLACK
+            && game.gridChecked[i][position.y] == FALSE) {
+            score++;
+        }
+    }
+    return score;
+}
+
+int numberPointsDown(Game game, Position position) {
+    int score = 0;
+    for (int i = position.x; i < NUMBER_LINES; i++) {
+        /*
+         * Si en-dessous de nous, on a une case noire qui n'est pas déjà cochée
+         * alors on augmente le score de gauche de 1
+         */
+        if (game.grid[i][position.y] == BLACK
+            && game.gridChecked[i][position.y] == FALSE) {
+            score++;
+        }
+    }
+    return score;
 }
