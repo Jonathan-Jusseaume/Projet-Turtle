@@ -112,6 +112,18 @@ typedef struct Game {
 } Game;
 
 /**
+ * Structure dont le principal rôle va être de nous permettre de renvoyer plusieurs informations depuis une position
+ * dans une direction. On va notamment renvoyer le nombre de points possiblement obtenables, ou encore le nombre de cases
+ * inconnues
+ */
+typedef struct InformationFromPosition {
+    Position position;
+    int direction;
+    int possibleScore;
+    int numberUnknown;
+} InformationFromPosition;
+
+/**
  * Renvoie une partie initialisée avec une grille 12x12 avec que des UNKNOWN,
  * le nombre de joueurs obtenu grâce à l'entrée standard qui nous permet d'instancier
  * une liste de joueurs à la bonne taille. Enfin, le numéro de notre joueur est également obtenu
@@ -195,36 +207,36 @@ int directionToScorePoints(Game game);
 Player getMyPlayer(Game game);
 
 /**
- * Renvoie le nombre de points situés à la gauche d'une position
+ * Renvoie différentes informations à gauche de la position donnée en paramètre
  * @param game la situation de la partie actuelle
  * @param position notre position
- * @return le nombre de points à marquer sur notre gauche
+ * @return différentes informations à gauche de la position
  */
-int numberPointsAtMyLeft(Game game, Position position);
+InformationFromPosition informationLEFT(Game game, Position position);
 
 /**
- * Renvoie le nombre de points situés à la droite d'une position
+ * Renvoie différentes informations à droite de la position donnée en paramètre
  * @param game la situation de la partie actuelle
  * @param position notre position
- * @return le nombre de points à marquer sur notre droite
+ * @return différentes informations à droite de la position
  */
-int numberPointsAtMyRight(Game game, Position position);
+InformationFromPosition informationRIGHT(Game game, Position position);
 
 /**
- * Renvoie le nombre de points situés en haut d'une position
+ * Renvoie différentes informations au-dessus de la position donnée en paramètre
  * @param game la situation de la partie actuelle
  * @param position notre position
- * @return le nombre de points à marquer au dessus de nous
+ * @return différentes informations au-dessus de la position
  */
-int numberPointsUp(Game game, Position position);
+InformationFromPosition informationUP(Game game, Position position);
 
 /**
- * Renvoie le nombre de points situés en bas d'une position
+ * Renvoie différentes informations en-dessous de la position donnée en paramètre
  * @param game la situation de la partie actuelle
  * @param position notre position
- * @return le nombre de points à marquer en dessous de nous
+ * @return différentes informations en-dessous de la position
  */
-int numberPointsDown(Game game, Position position);
+InformationFromPosition informationDOWN(Game game, Position position);
 
 
 /**
@@ -486,7 +498,7 @@ int main(void) {
         }
 
     }
-    nbTours++;
+    nbTurns++;
     fflush(stdout);
     updateGame(&game);
     fprintf(stdout, "NOBLIND\n");
@@ -523,10 +535,10 @@ int main(void) {
         fprintf(stdout, "MOVE %d\n", number2 - number);
         fflush(stdout);
     }
-    nbTours++;
+    nbTurns++;
 
 
-    while (nbTours < 150) {
+    while (nbTurns < 150) {
         fprintf(stdout, "NOBLIND\n");
         fflush(stdout);
         fprintf(stdout, "NOREVEAL\n");
@@ -536,7 +548,7 @@ int main(void) {
         fprintf(stdout, "PASS\n");
         fflush(stdout);
 
-        nbTours++;
+        nbTurns++;
     }
     return 0;
 }
@@ -774,22 +786,22 @@ int directionToScorePoints(Game game) {
      * et on retient le meilleur score, on va dans la direction du meilleure score
      * obtenue, si aucune ligne ne rapporte de points on renvoie -1
      */
-    int leftScore = numberPointsAtMyLeft(game, myPosition);
+    int leftScore = informationLEFT(game, myPosition).possibleScore;
     if (leftScore > bestScore) {
         bestScore = leftScore;
         direction = LEFT;
     }
-    int rightScore = numberPointsAtMyRight(game, myPosition);
+    int rightScore = informationRIGHT(game, myPosition).possibleScore;
     if (rightScore > bestScore) {
         bestScore = rightScore;
         direction = RIGHT;
     }
-    int upScore = numberPointsUp(game, myPosition);
+    int upScore = informationUP(game, myPosition).possibleScore;
     if (upScore > bestScore) {
         bestScore = upScore;
         direction = UP;
     }
-    int downScore = numberPointsDown(game, myPosition);
+    int downScore = informationDOWN(game, myPosition).possibleScore;
     if (downScore > bestScore) {
         bestScore = downScore;
         direction = DOWN;
@@ -807,8 +819,11 @@ Player getMyPlayer(Game game) {
     return myPlayer;
 }
 
-int numberPointsAtMyLeft(Game game, Position position) {
-    int score = 0;
+InformationFromPosition informationLEFT(Game game, Position position) {
+    InformationFromPosition informationLEFT;
+    informationLEFT.position = position;
+    informationLEFT.direction = LEFT;
+    informationLEFT.possibleScore = 0;
     for (int i = position.y; i > 0; i--) {
         /*
          * Si à notre gauche, on a une case noire qui n'est pas déjà cochée
@@ -816,14 +831,20 @@ int numberPointsAtMyLeft(Game game, Position position) {
          */
         if (game.grid[position.x][i] == BLACK
             && game.gridChecked[position.x][i] == FALSE) {
-            score++;
+            informationLEFT.possibleScore++;
+        }
+        if (game.grid[position.x][i] == UNKNOWN) {
+            informationLEFT.numberUnknown++;
         }
     }
-    return score;
+    return informationLEFT;
 }
 
-int numberPointsAtMyRight(Game game, Position position) {
-    int score = 0;
+InformationFromPosition informationRIGHT(Game game, Position position) {
+    InformationFromPosition informationRIGHT;
+    informationRIGHT.position = position;
+    informationRIGHT.direction = RIGHT;
+    informationRIGHT.possibleScore = 0;
     for (int i = position.y; i < NUMBER_COLUMNS; i++) {
         /*
          * Si à notre droite, on a une case noire qui n'est pas déjà cochée
@@ -831,14 +852,20 @@ int numberPointsAtMyRight(Game game, Position position) {
          */
         if (game.grid[position.x][i] == BLACK
             && game.gridChecked[position.x][i] == FALSE) {
-            score++;
+            informationRIGHT.possibleScore++;
+        }
+        if (game.grid[position.x][i] == UNKNOWN) {
+            informationRIGHT.numberUnknown++;
         }
     }
-    return score;
+    return informationRIGHT;
 }
 
-int numberPointsUp(Game game, Position position) {
-    int score = 0;
+InformationFromPosition informationUP(Game game, Position position) {
+    InformationFromPosition informationUP;
+    informationUP.position = position;
+    informationUP.direction = UP;
+    informationUP.possibleScore = 0;
     for (int i = position.x; i > 0; i--) {
         /*
          * Si au-dessus de nous, on a une case noire qui n'est pas déjà cochée
@@ -846,14 +873,20 @@ int numberPointsUp(Game game, Position position) {
          */
         if (game.grid[i][position.y] == BLACK
             && game.gridChecked[i][position.y] == FALSE) {
-            score++;
+            informationUP.possibleScore++;
+        }
+        if (game.grid[i][position.y] == UNKNOWN) {
+            informationUP.numberUnknown++;
         }
     }
-    return score;
+    return informationUP;
 }
 
-int numberPointsDown(Game game, Position position) {
-    int score = 0;
+InformationFromPosition informationDOWN(Game game, Position position) {
+    InformationFromPosition informationDOWN;
+    informationDOWN.position = position;
+    informationDOWN.direction = UP;
+    informationDOWN.possibleScore = 0;
     for (int i = position.x; i < NUMBER_LINES; i++) {
         /*
          * Si en-dessous de nous, on a une case noire qui n'est pas déjà cochée
@@ -861,8 +894,11 @@ int numberPointsDown(Game game, Position position) {
          */
         if (game.grid[i][position.y] == BLACK
             && game.gridChecked[i][position.y] == FALSE) {
-            score++;
+            informationDOWN.possibleScore++;
+        }
+        if (game.grid[i][position.y] == UNKNOWN) {
+            informationDOWN.numberUnknown++;
         }
     }
-    return score;
+    return informationDOWN;
 }
