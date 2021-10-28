@@ -200,6 +200,16 @@ void updateGrid(Game *game);
 int directionToScorePoints(Game game);
 
 /**
+ * Renvoie la direction par rapport à une position donnée en paramètre où il y a le plus de cases UNKNOWN,
+ * au moins 3
+ * @param la situation de la partie actuelle
+ * @param la position par rapport à laquelle on veut regarder
+ * @return -1 si aucune direction n'est satisfaisante, 0 s'il faut aller à gauche, 1 s'il faut aller en haut,
+ * 2 s'il faut aller à droite, 3 s'il faut aller en bas
+ */
+int directionToLookForward(Game game, Position position);
+
+/**
  * Renvoie notre joueur
  * @param game la partie duquelle on récupère notre joueur
  * @return notre joueur avec notamment sa tortue
@@ -381,6 +391,19 @@ int mainBrouillon(void) {
  */
 int main(void) {
     fprintf(stderr, "TORTANK A L'ATTAQUE \n");
+
+    int step = 0;
+    for (int origine = 6; origine > 0; origine += step) {
+        fprintf(stderr, "%d \n", origine);
+        if (step < 0) {
+            step--;
+        } else {
+            step++;
+        }
+        step *= -1;
+    }
+
+
     Game game = initGame();
     int nbTurns = 0;
     /*
@@ -809,6 +832,38 @@ int directionToScorePoints(Game game) {
     return direction;
 }
 
+int directionToLookForward(Game game, Position position) {
+    int direction = -1;
+    int numberUnknown = 0;
+    /*
+     * On regarde dans toutes les directions le score possible
+     * et on retient la direction dans laquelle il y a le plus de cases inconnues lorsque
+     * ce nombre est supérieur à 2
+     * Si aucune direction est satisfaisante on renvoie -1
+     */
+    int leftScore = informationLEFT(game, position).numberUnknown;
+    if (leftScore > numberUnknown && numberUnknown > 2) {
+        numberUnknown = leftScore;
+        direction = LEFT;
+    }
+    int rightScore = informationRIGHT(game, position).numberUnknown;
+    if (rightScore > numberUnknown && numberUnknown > 2) {
+        numberUnknown = rightScore;
+        direction = RIGHT;
+    }
+    int upScore = informationUP(game, position).numberUnknown;
+    if (upScore > numberUnknown && numberUnknown > 2) {
+        numberUnknown = upScore;
+        direction = UP;
+    }
+    int downScore = informationDOWN(game, position).numberUnknown;
+    if (downScore > numberUnknown && numberUnknown > 2) {
+        numberUnknown = downScore;
+        direction = DOWN;
+    }
+    return direction;
+}
+
 Player getMyPlayer(Game game) {
     Player myPlayer;
     for (int i = 0; i < game.numberPlayers; i++) {
@@ -902,3 +957,4 @@ InformationFromPosition informationDOWN(Game game, Position position) {
     }
     return informationDOWN;
 }
+
