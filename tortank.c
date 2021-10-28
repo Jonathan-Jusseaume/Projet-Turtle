@@ -41,6 +41,7 @@
 /**
  * Les valeurs d'orientation de la tortue
  */
+#define NOT_FOUND -1
 #define LEFT 0
 #define UP 1
 #define RIGHT 2
@@ -208,6 +209,15 @@ int directionToScorePoints(Game game);
  * 2 s'il faut aller à droite, 3 s'il faut aller en bas
  */
 int directionToLookForward(Game game, Position position);
+
+/**
+ * Demande au jeu, l'information selon une case selon une direction et une position donnée puis met
+ * à jour la partie dont a donné l'adresse en paramètre
+ * @param game l'adresse de la partie dont on va modifier les informations
+ * @param direction la direction dans laquelle on va demander l'information
+ * @param position la position depuis laquelle on va demander l'information
+ */
+void askInformationInTheDirection(Game *game, int direction, Position position);
 
 /**
  * Renvoie notre joueur
@@ -424,6 +434,17 @@ int main(void) {
          * Si on est pas aveuglé alors on peut réveler une case
          */
         if (isBlinded == FALSE) {
+            int directionToGo = directionToLookForward(game, getMyPlayer(game).turtle.position);
+            /*
+             * Si on a trouvé une direction intéressante depuis notre position, alors on va révélé l'information sur cette ligne
+             * ou colonne dans la direction qui nous intéresse
+             */
+            if (directionToGo != NOT_FOUND) {
+                askInformationInTheDirection(directionToGo, getMyPlayer(game).turtle.position);
+            } else {
+
+            }
+
             /**
              * FIXME
              *  - faire une méthode qui renvoie la chaine à envoyer au jeu
@@ -862,6 +883,49 @@ int directionToLookForward(Game game, Position position) {
         direction = DOWN;
     }
     return direction;
+}
+
+void askInformationInTheDirection(Game *game, int direction, Position position) {
+    char buffer[5];
+    int cellRevealed;
+    if (direction == LEFT) {
+        fprintf(stdout, "REVEALL %d %d \n", position.x, MOST_LEFT);
+        fflush(stdout);
+        fgets(buffer, 5, stdin);
+        cellRevealed = atoi(buffer);
+        for (int i = 0; i < cellRevealed; i++) {
+            game->grid[position.x][i] = WHITE;
+        }
+        game->grid[position.x][cellRevealed] = BLACK;
+    } else if (direction == DOWN) {
+        fprintf(stdout, "REVEALC %d %d \n", position.y, MOST_DOWN);
+        fflush(stdout);
+        fgets(buffer, 5, stdin);
+        cellRevealed = atoi(buffer);
+        for (int i = cellRevealed + 1; i < NUMBER_LINES; i++) {
+            game->grid[i][position.y] = WHITE;
+        }
+        game->grid[cellRevealed][position.y] = BLACK;
+    } else if (direction == UP) {
+        fprintf(stdout, "REVEALC %d %d \n", position.y, MOST_UP);
+        fflush(stdout);
+        fgets(buffer, 5, stdin);
+        cellRevealed = atoi(buffer);
+        for (int i = 0; i < cellRevealed; i++) {
+            game->grid[i][position.y] = WHITE;
+        }
+        game->grid[cellRevealed][position.y] = BLACK;
+    } else if (direction == RIGHT) {
+        fprintf(stdout, "REVEALL %d %d \n", position.x, MOST_RIGHT);
+        fflush(stdout);
+        fgets(buffer, 5, stdin);
+        cellRevealed = atoi(buffer);
+        for (int i = cellRevealed + 1; i < NUMBER_COLUMNS; i++) {
+            game->grid[position.x][i] = WHITE;
+        }
+        game->grid[position.x][cellRevealed] = BLACK;
+    }
+    updateGrid(game);
 }
 
 Player getMyPlayer(Game game) {
