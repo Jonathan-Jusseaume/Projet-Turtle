@@ -834,7 +834,7 @@ int directionToScorePoints(Game game) {
 
 int directionToLookForward(Game game, Position position) {
     int direction = -1;
-    int numberUnknown = 0;
+    int bestNumberUnknown = 0;
     /*
      * On regarde dans toutes les directions le score possible
      * et on retient la direction dans laquelle il y a le plus de cases inconnues lorsque
@@ -842,23 +842,23 @@ int directionToLookForward(Game game, Position position) {
      * Si aucune direction est satisfaisante on renvoie -1
      */
     int leftScore = informationLEFT(game, position).numberUnknown;
-    if (leftScore > numberUnknown && numberUnknown > 2) {
-        numberUnknown = leftScore;
+    if (leftScore > bestNumberUnknown && bestNumberUnknown > 2) {
+        bestNumberUnknown = leftScore;
         direction = LEFT;
     }
     int rightScore = informationRIGHT(game, position).numberUnknown;
-    if (rightScore > numberUnknown && numberUnknown > 2) {
-        numberUnknown = rightScore;
+    if (rightScore > bestNumberUnknown && bestNumberUnknown > 2) {
+        bestNumberUnknown = rightScore;
         direction = RIGHT;
     }
     int upScore = informationUP(game, position).numberUnknown;
-    if (upScore > numberUnknown && numberUnknown > 2) {
-        numberUnknown = upScore;
+    if (upScore > bestNumberUnknown && bestNumberUnknown > 2) {
+        bestNumberUnknown = upScore;
         direction = UP;
     }
     int downScore = informationDOWN(game, position).numberUnknown;
-    if (downScore > numberUnknown && numberUnknown > 2) {
-        numberUnknown = downScore;
+    if (downScore > bestNumberUnknown && bestNumberUnknown > 2) {
+        bestNumberUnknown = downScore;
         direction = DOWN;
     }
     return direction;
