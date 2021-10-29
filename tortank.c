@@ -260,141 +260,16 @@ InformationFromPosition informationUP(Game game, Position position);
  */
 InformationFromPosition informationDOWN(Game game, Position position);
 
-
 /**
- * Main pour faire des tests de fonction
+ * Renvoie le nombre de cases qui séparent la première position passée en paramètre de la
+ * deuxième grâce à la direction passée en paramètre
+ * @param from la position de départ
+ * @param to la position visée
+ * @param direction la direction dans laquelle on doit aller
  * @return
  */
-int mainBrouillon(void) {
-    fprintf(stderr, "CARABAFFE A L'ATTAQUE \n");
-    Game game = initGame();
-    int nbTurns = 0;
-    while (nbTurns < 150) {
-        updateGame(&game);
-        fprintf(stdout, "NOBLIND\n");
-        fflush(stdout);
-        checkIfBlinded(game);
-        fprintf(stdout, "NOREVEAL\n");
-        fflush(stdout);
-        for (int i = 0; i < NUMBER_LINES; i++) {
-            displayArray(game.grid[i], NUMBER_COLUMNS);
-        }
-        fprintf(stdout, "NOPARALYZE\n");
-        fflush(stdout);
-        checkIfParalyzed(game);
-        fprintf(stdout, "PASS\n");
-        fflush(stdout);
+int getNumberCellsBetweenTwoPositions(Position from, Position to, int direction);
 
-
-        nbTurns++;
-    }
-
-    /*
-     * Notre comportement sur tous les tours
-     */
-    while (nbTurns < 150) {
-        /*
-         * On récupère les informations de la partie
-         */
-        updateGame(&game);
-        /*
-         * On ne joue pas avec l'aveuglement
-         */
-        fprintf(stdout, "NOBLIND\n");
-        fflush(stdout);
-        int isBlinded = checkIfBlinded(game);
-        /*
-         * Si on est pas aveuglé alors on peut réveler une case
-         */
-        if (isBlinded == FALSE) {
-
-        } else {
-            fprintf(stdout, "NOREVEAL\n");
-            fflush(stdout);
-        }
-        /*
-         * On display la map actuelle
-         */
-        for (int i = 0; i < NUMBER_LINES; i++) {
-            displayArray(game.grid[i], NUMBER_COLUMNS);
-        }
-
-
-        nbTurns++;
-    }
-
-    int number;
-    if (checkIfBlinded(game) == FALSE) {
-        fprintf(stdout, "REVEALL %d %d\n", 6, MOST_LEFT);
-        fflush(stdout);
-        char buffer[5];
-        fgets(buffer, 5, stdin);
-        fprintf(stderr, "Case=%s\n", buffer);
-        number = atoi(buffer);
-        if (number == -1) {
-            for (int i = 0; i < NUMBER_COLUMNS; i++) {
-                game.grid[6][i] = WHITE;
-            }
-        } else {
-            for (int i = 0; i < number; i++) {
-                game.grid[6][i] = WHITE;
-            }
-            game.grid[6][number] = BLACK;
-        }
-    }
-    fprintf(stdout, "NOPARALYZE\n");
-    fflush(stdout);
-    if (checkIfParalyzed(game) == FALSE) {
-        if (game.players[game.myNumero].turtle.direction == LEFT) {
-            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; ROTATE 1; ROTATE 1; PASS\n", number);
-            fflush(stdout);
-        } else if (game.players[game.myNumero].turtle.direction == RIGHT) {
-            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; PASS\n", number);
-            fflush(stdout);
-        } else if (game.players[game.myNumero].turtle.direction == UP) {
-            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; ROTATE 1; PASS\n", number);
-            fflush(stdout);
-        } else if (game.players[game.myNumero].turtle.direction == DOWN) {
-            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; ROTATE 0; PASS\n", number);
-            fflush(stdout);
-        }
-
-    }
-    nbTurns++;
-    fflush(stdout);
-    updateGame(&game);
-    fprintf(stdout, "NOBLIND\n");
-    fflush(stdout);
-    fflush(stderr);
-    int number2 = -1;
-    if (checkIfBlinded(game) == FALSE) {
-        fprintf(stdout, "REVEALL %d %d\n", 6, 1);
-        fflush(stdout);
-        char buffer[5];
-        fflush(stdin);
-        fgets(buffer, 5, stdin);
-        number2 = atoi(buffer);
-        if (number2 == -1) {
-            for (int i = 0; i < NUMBER_COLUMNS; i++) {
-                game.grid[6][i] = WHITE;
-            }
-        } else {
-            for (int i = NUMBER_COLUMNS - 1; i > number2; i--) {
-                game.grid[6][i] = WHITE;
-            }
-            game.grid[6][number2] = BLACK;
-        }
-    }
-    fprintf(stdout, "NOPARALYZE\n");
-    fflush(stdout);
-    if (checkIfParalyzed(game) == FALSE) {
-        fprintf(stdout, "MOVE %d\n", number2 - number);
-        fflush(stdout);
-    }
-    nbTurns++;
-
-    return 0;
-}
 
 /**
  * Main de l'application, il démarre par une initialisation de la partie,
@@ -443,15 +318,8 @@ int main(void) {
              * ou colonne dans la direction qui nous intéresse
              */
             if (informationDirectionToGo.direction != NOT_FOUND) {
-                fprintf(stderr, "%d %d \n", informationDirectionToGo.direction, informationDirectionToGo.numberUnknown);
-                for (int i = 0; i < NUMBER_LINES; i++) {
-                    displayArray(game.grid[i], NUMBER_COLUMNS);
-                }
                 askInformationInTheDirection(&game, informationDirectionToGo.direction,
                                              getMyPlayer(game).turtle.position);
-                for (int i = 0; i < NUMBER_LINES; i++) {
-                    displayArray(game.grid[i], NUMBER_COLUMNS);
-                }
             } else {
                 /*
                  * Si on est au premier tour alors on a aucune information donc on fait aléatoirement
@@ -470,18 +338,10 @@ int main(void) {
                     * Si on est pas au premier tour il faut faire par rapport à ce qui a déjà été dévoilé
                     */
                 else {
-                    /**
-                     * FIXME
-                     */
                     fprintf(stdout, "NOREVEAL\n");
                     fflush(stdout);
                 }
             }
-            /*
-             * On ne joue pas avec la paralysie
-             */
-            fprintf(stdout, "NOPARALYZE\n");
-            fflush(stdout);
 
             /**
              * FIXME
@@ -507,29 +367,100 @@ int main(void) {
          * On regarde si on est paralysé afin de savoir si on peut bouger
          */
         int isParalyzed = checkIfParalyzed(game);
+        updateGrid(&game);
         if (isParalyzed == FALSE) {
-            InformationFromPosition informationDirectionToScore = directionToScorePoints(game, getMyPlayer(game).turtle.position);
+            InformationFromPosition informationDirectionToScore = directionToScorePoints(game, getMyPlayer(
+                    game).turtle.position);
             /*
              * Si on trouve une direction pour marquer des points, alors on s'oriente vers elle et
              * on run
              */
-            if (informationDirectionToScore != NOT_FOUND) {
+            if (informationDirectionToScore.direction != NOT_FOUND) {
                 /*
                  * On regarde si l'orientation est mauvaise pour savoir si on doit faire
                  * rotate notre tortue
                  */
                 if (informationDirectionToScore.direction != getMyPlayer(game).turtle.direction) {
-                    /**
-                     * FIXME
-                     *  - code pour remettre notre tortue bien droite (fonction)
-                     */
+                    if (getMyPlayer(game).turtle.direction == RIGHT && informationDirectionToScore.direction == UP) {
+                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+                    } else if (getMyPlayer(game).turtle.direction == RIGHT &&
+                               informationDirectionToScore.direction == DOWN) {
+                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+                    } else if (getMyPlayer(game).turtle.direction == LEFT &&
+                               informationDirectionToScore.direction == UP) {
+                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+                    } else if (getMyPlayer(game).turtle.direction == LEFT &&
+                               informationDirectionToScore.direction == DOWN) {
+                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+                    } else if (getMyPlayer(game).turtle.direction == UP &&
+                               informationDirectionToScore.direction == RIGHT) {
+                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+                    } else if (getMyPlayer(game).turtle.direction == UP &&
+                               informationDirectionToScore.direction == LEFT) {
+                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+                    } else if (getMyPlayer(game).turtle.direction == DOWN &&
+                               informationDirectionToScore.direction == RIGHT) {
+                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+                    } else if (getMyPlayer(game).turtle.direction == DOWN &&
+                               informationDirectionToScore.direction == LEFT) {
+                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+                    }
                 }
+                fprintf(stdout, "MOVE %d\n", getNumberCellsBetweenTwoPositions(getMyPlayer(game).turtle.position,
+                                                                               informationDirectionToScore.lastBlackCellUnchecked,
+                                                                               informationDirectionToScore.direction));
+                fflush(stdout);
                 /**
                   * FIXME (le bon nombre de cases) donc rajouter la dernière case noire unchecked
                   * dans les InformationDirection,
                   * rajouter une fonction qui prenant notre position, celle visée et une direction renvoie le nombre de cases à
                   * parcourir
                  */
+
+            } else {
+                /**
+                 * Cherche une case noire unchecked où le nombre de points à marquer est le plus important
+                 * et se téléporte dessus
+                 */
+                fprintf(stderr, "TORTANK VA SE TELEPORTER\n");
+                InformationFromPosition informationPositionToTeleport;
+                informationPositionToTeleport.possibleScore = 0;
+                informationPositionToTeleport.position.x = -1;
+                informationPositionToTeleport.position.y = -1;
+                for (int i = 0; i < NUMBER_LINES; i++) {
+                    for (int j = 0; j < NUMBER_COLUMNS; j++) {
+                        if (game.grid[i][j] == BLACK && game.gridChecked[i][j] == FALSE) {
+                            Position positionToLook = {i, j};
+                            InformationFromPosition interestingInformation = directionToScorePoints(game,
+                                                                                                    positionToLook);
+                            if (interestingInformation.possibleScore >= informationPositionToTeleport.possibleScore) {
+                                informationPositionToTeleport = interestingInformation;
+                            }
+                        }
+                    }
+                }
+
+                if (informationPositionToTeleport.position.x != -1 && informationPositionToTeleport.position.y != -1) {
+                    fprintf(stdout, "TELEPORT %d %d;", informationPositionToTeleport.position.x,
+                            informationPositionToTeleport.position.y);
+                    fflush(stdout);
+                    /*
+                     * Cette situation risque de se produire lors du premier tour,
+                     * notre tortue ne quittera jamais la zone noire, autant utiliser
+                     * switchpen après la première téléportation du jeu
+                     */
+                    if (getMyPlayer(game).turtle.penIsDown == FALSE) {
+                        fprintf(stdout, "SWITCHPEN\n");
+                        fflush(stdout);
+                    } else {
+                        fprintf(stdout, "PASS\n");
+                        fflush(stdout);
+                    }
+                } else {
+                    fprintf(stdout, "PASS\n");
+                    fflush(stdout);
+                }
+
 
             }
 
@@ -542,9 +473,9 @@ int main(void) {
         /*
          * On display la map actuelle
          */
-        for (int i = 0; i < NUMBER_LINES; i++) {
-            displayArray(game.grid[i], NUMBER_COLUMNS);
-        }
+        /*     for (int i = 0; i < NUMBER_LINES; i++) {
+                 displayArray(game.grid[i], NUMBER_COLUMNS);
+             } */
 
         /**
          * FIXME
@@ -554,124 +485,6 @@ int main(void) {
          *  - si on a vraiment rien à porter même avec un TP alors on PASS notre tour
          */
 
-
-        nbTurns++;
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    updateGame(&game);
-    fprintf(stdout, "NOBLIND\n");
-    fflush(stdout);
-    int number;
-    if (checkIfBlinded(game) == FALSE) {
-        fprintf(stdout, "REVEALL %d %d\n", 6, MOST_LEFT);
-        fflush(stdout);
-        char buffer[5];
-        fgets(buffer, 5, stdin);
-        number = atoi(buffer);
-        if (number == -1) {
-            for (int i = 0; i < NUMBER_COLUMNS; i++) {
-                game.grid[6][i] = WHITE;
-            }
-        } else {
-            for (int i = 0; i < number; i++) {
-                game.grid[6][i] = WHITE;
-            }
-            game.grid[6][number] = BLACK;
-        }
-    }
-    fprintf(stdout, "NOPARALYZE\n");
-    fflush(stdout);
-    if (checkIfParalyzed(game) == FALSE) {
-        if (game.players[game.myNumero].turtle.direction == LEFT) {
-            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; ROTATE 1; ROTATE 1; PASS\n", number);
-            fflush(stdout);
-        } else if (game.players[game.myNumero].turtle.direction == RIGHT) {
-            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; PASS\n", number);
-            fflush(stdout);
-        } else if (game.players[game.myNumero].turtle.direction == UP) {
-            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; ROTATE 1; PASS\n", number);
-            fflush(stdout);
-        } else if (game.players[game.myNumero].turtle.direction == DOWN) {
-            fprintf(stdout, "TELEPORT 6 %d; SWITCHPEN; ROTATE 0; PASS\n", number);
-            fflush(stdout);
-        }
-
-    }
-    nbTurns++;
-    fflush(stdout);
-    updateGame(&game);
-    fprintf(stdout, "NOBLIND\n");
-    fflush(stdout);
-    fflush(stderr);
-    int number2 = -1;
-    if (checkIfBlinded(game) == FALSE) {
-        fprintf(stdout, "REVEALL %d %d\n", 6, 1);
-        fflush(stdout);
-        char buffer[5];
-        fflush(stdin);
-        fgets(buffer, 5, stdin);
-        number2 = atoi(buffer);
-        if (number2 == -1) {
-            for (int i = 0; i < NUMBER_COLUMNS; i++) {
-                game.grid[6][i] = WHITE;
-            }
-        } else {
-            for (int i = NUMBER_COLUMNS - 1; i > number2; i--) {
-                game.grid[6][i] = WHITE;
-            }
-            game.grid[6][number2] = BLACK;
-        }
-    }
-    int numberIA;
-    for (int i = 0; i < game.numberPlayers; i++) {
-        if (game.players[i].number != game.myNumero) {
-            numberIA = game.players[i].number;
-        }
-    }
-    fprintf(stdout, "PARALYZE %d\n", numberIA);
-    fflush(stdout);
-    if (checkIfParalyzed(game) == FALSE) {
-        fprintf(stdout, "MOVE %d\n", number2 - number);
-        fflush(stdout);
-    }
-    nbTurns++;
-
-
-    while (nbTurns < 150) {
-        fprintf(stdout, "NOBLIND\n");
-        fflush(stdout);
-        fprintf(stdout, "NOREVEAL\n");
-        fflush(stdout);
-        fprintf(stdout, "PARALYZE %d\n", numberIA);
-        fflush(stdout);
-        fprintf(stdout, "PASS\n");
-        fflush(stdout);
 
         nbTurns++;
     }
@@ -756,7 +569,6 @@ void updateGame(Game *game) {
     for (int i = 0; i < game->numberPlayers; i++) {
         fgets(buffer, 15, stdin);
         int *playerInfo = parseLine(buffer);
-        fprintf(stderr, "Joueur=%d, score=%d, isRemove=%d \n", playerInfo[0], playerInfo[1], playerInfo[2]);
         game->players[i].number = playerInfo[0];
         game->players[i].score = playerInfo[1];
         game->players[i].isRemove = playerInfo[2];
@@ -764,18 +576,12 @@ void updateGame(Game *game) {
     }
     fgets(buffer, 15, stdin);
     int nbCells = atoi(buffer);
-    fprintf(stderr, "Nombre cellules=%d \n", nbCells);
     for (int i = 0; i < nbCells; i++) {
         fgets(buffer, 15, stdin);
         int *cellInfo = parseLine(buffer);
-        fprintf(stderr, "Cell %d: l=%d, c=%d, color=%d \n", i, cellInfo[1], cellInfo[2], cellInfo[3]);
-        fprintf(stderr, "STEP 1\n");
         game->grid[cellInfo[1]][cellInfo[2]] = cellInfo[3];
-        fprintf(stderr, "STEP 2\n");
         game->gridChecked[cellInfo[1]][cellInfo[2]] = TRUE;
-        fprintf(stderr, "STEP 3\n");
         free(cellInfo);
-        fprintf(stderr, "STEP 4\n");
     }
     for (int i = 0; i < game->numberPlayers; i++) {
         fgets(buffer, 15, stdin);
@@ -784,11 +590,6 @@ void updateGame(Game *game) {
         game->players[i].turtle.position.y = playerTurtleInfo[2];
         game->players[i].turtle.direction = playerTurtleInfo[3];
         game->players[i].turtle.penIsDown = playerTurtleInfo[4];
-        fprintf(stderr, "Player: %d, Turtle: x=%d y=%d direction = %d, penIsDown=%d \n", playerTurtleInfo[0],
-                playerTurtleInfo[1],
-                playerTurtleInfo[2],
-                playerTurtleInfo[3],
-                playerTurtleInfo[4]);
         free(playerTurtleInfo);
     }
     updateGrid(game);
@@ -797,12 +598,10 @@ void updateGame(Game *game) {
 
 int checkIfBlinded(Game game) {
     int isBlinded = FALSE;
-    fprintf(stderr, "nombreJoueurs: %d \n", game.numberPlayers);
     for (int i = 0; i < game.numberPlayers; i++) {
         char buffer[15];
         fgets(buffer, 15, stdin);
         int *playerBlind = parseLine(buffer);
-        fprintf(stderr, "joueur: %d, blind:%d \n", playerBlind[0], playerBlind[1]);
         if (playerBlind[0] == game.myNumero &&
             playerBlind[1] == BLINDED) {
             isBlinded = TRUE;
@@ -814,12 +613,10 @@ int checkIfBlinded(Game game) {
 
 int checkIfParalyzed(Game game) {
     int isParalyzed = FALSE;
-    fprintf(stderr, "nombreJoueurs: %d \n", game.numberPlayers);
     for (int i = 0; i < game.numberPlayers; i++) {
         char buffer[15];
         fgets(buffer, 15, stdin);
         int *playerParalyzed = parseLine(buffer);
-        fprintf(stderr, "joueur: %d, paralyzed:%d \n", playerParalyzed[0], playerParalyzed[1]);
         if (playerParalyzed[0] == game.myNumero &&
             playerParalyzed[1] == PARALYZED) {
             isParalyzed = TRUE;
@@ -830,7 +627,6 @@ int checkIfParalyzed(Game game) {
 }
 
 void updateGrid(Game *game) {
-    fprintf(stderr, "J'update la grille \n");
     int hasChangedSomething = FALSE;
     /*
      * On regarde les lignes d'abord
@@ -911,30 +707,27 @@ InformationFromPosition directionToScorePoints(Game game, Position position) {
     returnedInformation.direction = NOT_FOUND;
     returnedInformation.possibleScore = 0;
     returnedInformation.position = position;
+    int myDirection = getMyPlayer(game).turtle.direction;
     /*
      * On regarde dans toutes les directions le score possible
      * et on retient le meilleur score, on va dans la direction du meilleure score
      * obtenue, si aucune ligne ne rapporte de points on renvoie -1
      */
-    int leftScore = informationLEFT(game, position).possibleScore;
-    if (leftScore > returnedInformation.possibleScore) {
-        returnedInformation.possibleScore = leftScore;
-        returnedInformation.direction = LEFT;
+    InformationFromPosition informationLeft = informationLEFT(game, position);
+    if (informationLeft.possibleScore > returnedInformation.possibleScore && myDirection != RIGHT) {
+        returnedInformation = informationLeft;
     }
-    int rightScore = informationRIGHT(game, position).possibleScore;
-    if (rightScore > returnedInformation.possibleScore) {
-        returnedInformation.possibleScore = rightScore;
-        returnedInformation.direction = RIGHT;
+    InformationFromPosition informationRight = informationRIGHT(game, position);
+    if (informationRight.possibleScore > returnedInformation.possibleScore && myDirection != LEFT) {
+        returnedInformation = informationRight;
     }
-    int upScore = informationUP(game, position).possibleScore;
-    if (upScore > returnedInformation.possibleScore) {
-        returnedInformation.possibleScore = upScore;
-        returnedInformation.direction = UP;
+    InformationFromPosition informationUp = informationUP(game, position);
+    if (informationUp.possibleScore > returnedInformation.possibleScore && myDirection != UP) {
+        returnedInformation = informationUp;
     }
-    int downScore = informationDOWN(game, position).possibleScore;
-    if (downScore > returnedInformation.possibleScore) {
-        returnedInformation.possibleScore = downScore;
-        returnedInformation.direction = DOWN;
+    InformationFromPosition informationDown = informationDOWN(game, position);
+    if (informationDown.possibleScore > returnedInformation.possibleScore && myDirection != DOWN) {
+        returnedInformation = informationDown;
     }
     return returnedInformation;
 }
@@ -950,25 +743,21 @@ InformationFromPosition directionToLookForward(Game game, Position position) {
      * ce nombre est supérieur à 2
      * Si aucune direction est satisfaisante on renvoie -1
      */
-    int leftScore = informationLEFT(game, position).numberUnknown;
-    if (leftScore > returnedInformation.numberUnknown && leftScore > 2) {
-        returnedInformation.numberUnknown = leftScore;
-        returnedInformation.direction = LEFT;
+    InformationFromPosition informationLeft = informationLEFT(game, position);
+    if (informationLeft.numberUnknown > returnedInformation.numberUnknown) {
+        returnedInformation = informationLeft;
     }
-    int rightScore = informationRIGHT(game, position).numberUnknown;
-    if (rightScore > returnedInformation.numberUnknown && rightScore > 2) {
-        returnedInformation.numberUnknown = rightScore;
-        returnedInformation.direction = RIGHT;
+    InformationFromPosition informationRight = informationRIGHT(game, position);
+    if (informationRight.numberUnknown > returnedInformation.numberUnknown) {
+        returnedInformation = informationRight;
     }
-    int upScore = informationUP(game, position).numberUnknown;
-    if (upScore > returnedInformation.numberUnknown && upScore > 2) {
-        returnedInformation.numberUnknown = upScore;
-        returnedInformation.direction = UP;
+    InformationFromPosition informationUp = informationUP(game, position);
+    if (informationUp.numberUnknown > returnedInformation.numberUnknown) {
+        returnedInformation = informationUp;
     }
-    int downScore = informationDOWN(game, position).numberUnknown;
-    if (downScore > returnedInformation.numberUnknown && downScore > 2) {
-        returnedInformation.numberUnknown = downScore;
-        returnedInformation.direction = DOWN;
+    InformationFromPosition informationDown = informationDOWN(game, position);
+    if (informationDown.numberUnknown > returnedInformation.numberUnknown) {
+        returnedInformation = informationDown;
     }
     return returnedInformation;
 }
@@ -985,8 +774,8 @@ void askInformationInTheDirection(Game *game, int direction, Position position) 
             game->grid[position.x][i] = WHITE;
         }
         game->grid[position.x][cellRevealed] = BLACK;
-    } else if (direction == DOWN) {
-        fprintf(stdout, "REVEALC %d %d\n", position.y, MOST_DOWN);
+    } else if (direction == UP) {
+        fprintf(stdout, "REVEALC %d %d\n", position.y, MOST_UP);
         fflush(stdout);
         fgets(buffer, 5, stdin);
         cellRevealed = atoi(buffer);
@@ -994,8 +783,8 @@ void askInformationInTheDirection(Game *game, int direction, Position position) 
             game->grid[i][position.y] = WHITE;
         }
         game->grid[cellRevealed][position.y] = BLACK;
-    } else if (direction == UP) {
-        fprintf(stdout, "REVEALC %d %d\n", position.y, MOST_UP);
+    } else if (direction == DOWN) {
+        fprintf(stdout, "REVEALC %d %d\n", position.y, MOST_DOWN);
         fflush(stdout);
         fgets(buffer, 5, stdin);
         cellRevealed = atoi(buffer);
@@ -1080,7 +869,7 @@ InformationFromPosition informationUP(Game game, Position position) {
     informationUP.direction = UP;
     informationUP.possibleScore = 0;
     informationUP.numberUnknown = 0;
-    for (int i = position.x; i > 0; i--) {
+    for (int i = position.x + 1; i < NUMBER_LINES; i++) {
         /*
          * Si au-dessus de nous, on a une case noire qui n'est pas déjà cochée
          * alors on augmente le score de gauche de 1
@@ -1101,10 +890,10 @@ InformationFromPosition informationUP(Game game, Position position) {
 InformationFromPosition informationDOWN(Game game, Position position) {
     InformationFromPosition informationDOWN;
     informationDOWN.position = position;
-    informationDOWN.direction = UP;
+    informationDOWN.direction = DOWN;
     informationDOWN.possibleScore = 0;
     informationDOWN.numberUnknown = 0;
-    for (int i = position.x; i < NUMBER_LINES; i++) {
+    for (int i = position.x; i >= 0; i--) {
         /*
          * Si en-dessous de nous, on a une case noire qui n'est pas déjà cochée
          * alors on augmente le score de gauche de 1
@@ -1120,4 +909,23 @@ InformationFromPosition informationDOWN(Game game, Position position) {
         }
     }
     return informationDOWN;
+}
+
+int getNumberCellsBetweenTwoPositions(Position from, Position to, int direction) {
+    int number = 0;
+    switch (direction) {
+        case LEFT:
+            number = from.y - to.y;
+            break;
+        case RIGHT:
+            number = to.y - from.y;
+            break;
+        case DOWN:
+            number = from.x - to.x;
+            break;
+        case UP:
+            number = to.x - from.x;
+            break;
+    }
+    return number;
 }
