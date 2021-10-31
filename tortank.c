@@ -294,7 +294,7 @@ int main(void) {
                     InformationFromPosition bestPosition;
                     bestPosition.numberUnknown = 0;
                     bestPosition.direction = NOT_FOUND;
-                    for (int origine = 2; origine < NUMBER_LINES - 2; origine++) {
+                    for (int origine = 1; origine < NUMBER_LINES - 1; origine++) {
                         InformationFromPosition informationFromPosition = directionToLookForward(game,
                                                                                                  (Position) {origine,
                                                                                                              6});
