@@ -310,6 +310,7 @@ int main(void) {
                         fprintf(stderr, "TORTANK REVELE DE L'INFORMATION DISTANTE \n \n");
                     } else {
                         fprintf(stderr, "TORTANK N'EST PAS ASSEZ INTELLIGENT POUR REVELER DE L'INFORMATION \n \n");
+                        fprintf(stdout, "NOREVEAL\n");
                         fflush(stdout);
                     }
                 }
