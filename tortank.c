@@ -291,9 +291,27 @@ int main(void) {
                 }
                     // Pas de révélation pour l'instant si on ne voit rien d'intéressant
                 else {
-                    fprintf(stderr, "TORTANK N'EST PAS ASSEZ INTELLIGENT POUR DEMANDER DE L'INFORMATION \n \n");
-                    fprintf(stdout, "NOREVEAL\n");
-                    fflush(stdout);
+                    InformationFromPosition bestPosition;
+                    bestPosition.numberUnknown = 0;
+                    bestPosition.direction = NOT_FOUND;
+                    for (int origine = 2; origine < NUMBER_LINES - 2; origine++) {
+                        InformationFromPosition informationFromPosition = directionToLookForward(game,
+                                                                                                 (Position) {origine,
+                                                                                                             6});
+
+                        if (informationFromPosition.direction != NOT_FOUND &&
+                            informationFromPosition.numberUnknown >= bestPosition.numberUnknown) {
+                            bestPosition = informationFromPosition;
+                        }
+                    }
+                    if (bestPosition.direction != UNKNOWN) {
+                        askInformationInTheDirection(&game, bestPosition.direction,
+                                                     bestPosition.position);
+                        fprintf(stderr, "TORTANK REVELE DE L'INFORMATION DISTANTE \n \n");
+                    } else {
+                        fprintf(stderr, "TORTANK N'EST PAS ASSEZ INTELLIGENT POUR REVELER DE L'INFORMATION \n \n");
+                        fflush(stdout);
+                    }
                 }
             }
         } else {
