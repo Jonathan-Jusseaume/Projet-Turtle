@@ -3,6 +3,15 @@
  */
 
 /**
+ * @todo La méthode getMyPlayer doit renvoyer l'adresse de ce joueur et non pas le joueur en lui même
+ * @todo Quand on se déplace notre tortue doit être déplacée aussi
+ * @todo Rajouter un booléen hasUsePower sur la game pour vérifier qu'on a déjà utilisé une TP, Paralysie ou Aveuglement
+ * @todo Quand on se tourne notre tortue doit être tournée aussi
+ * @todo une fois que tout ça est validé, alors on pourra envisagé à faire 4 actions par tour
+ * @todo pour Watel DOWN = UP !!!, revoir toute la gestion des directions
+ */
+
+/**
  * Les librairies
  */
 #include<stdio.h>
@@ -198,7 +207,7 @@ void askInformationInTheDirection(Game *game, int direction, Position position);
  * @param game la partie duquelle on récupère notre joueur
  * @return notre joueur avec notamment sa tortue
  */
-Player getMyPlayer(Game game);
+Player *getMyPlayer(Game *game);
 
 /**
  * Renvoie différentes informations à gauche de la position donnée en paramètre
@@ -240,7 +249,7 @@ InformationFromPosition informationDOWN(Game game, Position position);
  * @param direction la direction dans laquelle on doit aller
  * @return
  */
-int getNumberCellsBetweenTwoPositions(Position from, Position to, int direction);
+int getNumberCellsBetweenTwoPositions(Game *game, Position to, int direction);
 
 
 /**
@@ -267,7 +276,7 @@ int main(void) {
         // Si on est pas aveuglé alors on peut réveler une case
         if (isBlinded == FALSE) {
             InformationFromPosition informationDirectionToGo = directionToLookForward(game, getMyPlayer(
-                    game).turtle.position);
+                    &game)->turtle.position);
             /*
              * Si on a trouvé une direction intéressante depuis notre position, alors on va révélé l'information sur cette ligne
              * ou colonne dans la direction qui nous intéresse
@@ -275,7 +284,7 @@ int main(void) {
             if (informationDirectionToGo.direction != NOT_FOUND) {
                 fprintf(stderr, "TORTANK DEMANDE DE L'INFORMATION PROCHE \n \n");
                 askInformationInTheDirection(&game, informationDirectionToGo.direction,
-                                             getMyPlayer(game).turtle.position);
+                                             getMyPlayer(&game)->turtle.position);
             } else {
                 // Comportement au premier tour
                 if (nbTurns == 0) {
@@ -285,7 +294,7 @@ int main(void) {
 
                     // On demande des informations à l'opposé de notre position
                     Position randomPosition = {nbColumnOrLine, nbColumnOrLine};
-                    askInformationInTheDirection(&game, (getMyPlayer(game).turtle.direction + 2) % 4, randomPosition);
+                    askInformationInTheDirection(&game, (getMyPlayer(&game)->turtle.direction + 2) % 4, randomPosition);
 
                     fprintf(stderr, "TORTANK DEMANDE UNE INFORMATION AU HASARD \n \n");
                 }
@@ -310,6 +319,7 @@ int main(void) {
                         fprintf(stderr, "TORTANK REVELE DE L'INFORMATION DISTANTE \n \n");
                     } else {
                         fprintf(stderr, "TORTANK N'EST PAS ASSEZ INTELLIGENT POUR REVELER DE L'INFORMATION \n \n");
+                        fprintf(stdout, "NOREVEAL\n");
                         fflush(stdout);
                     }
                 }
@@ -327,82 +337,125 @@ int main(void) {
         // On regarde si on est paralysé afin de savoir si on peut bouger
         int isParalyzed = checkIfParalyzed(game);
         if (isParalyzed == FALSE) {
-            InformationFromPosition informationDirectionToScore = directionToScorePoints(game, getMyPlayer(
-                    game).turtle.position);
+            int nbPlays = 0;
+            while (nbPlays < 4) {
+                InformationFromPosition informationDirectionToScore = directionToScorePoints(game, getMyPlayer(
+                        &game)->turtle.position);
+                fprintf(stderr, "INFORMATION TO SCORE: points:%d, direction:%d \n",
+                        informationDirectionToScore.possibleScore,
+                        informationDirectionToScore.direction
+                );
 
-            // Si on trouve une direction pour marquer des points, alors on s'oriente puis on déplace vers
-            if (informationDirectionToScore.direction != NOT_FOUND) {
-                fprintf(stderr, "TORTANK A TROUVE DES CASES NOIRES A PROXIMITE\n \n");
-                // Si on a pas la bonne orientation alors on doit tourner
-                if (informationDirectionToScore.direction != getMyPlayer(game).turtle.direction) {
-                    fprintf(stderr, "TORTANK DOIT SE TOURNER \n \n");
-                    if (getMyPlayer(game).turtle.direction == RIGHT && informationDirectionToScore.direction == UP) {
-                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
-                    } else if (getMyPlayer(game).turtle.direction == RIGHT &&
-                               informationDirectionToScore.direction == DOWN) {
-                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
-                    } else if (getMyPlayer(game).turtle.direction == LEFT &&
-                               informationDirectionToScore.direction == UP) {
-                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
-                    } else if (getMyPlayer(game).turtle.direction == LEFT &&
-                               informationDirectionToScore.direction == DOWN) {
-                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
-                    } else if (getMyPlayer(game).turtle.direction == UP &&
-                               informationDirectionToScore.direction == RIGHT) {
-                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
-                    } else if (getMyPlayer(game).turtle.direction == UP &&
-                               informationDirectionToScore.direction == LEFT) {
-                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
-                    } else if (getMyPlayer(game).turtle.direction == DOWN &&
-                               informationDirectionToScore.direction == RIGHT) {
-                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
-                    } else if (getMyPlayer(game).turtle.direction == DOWN &&
-                               informationDirectionToScore.direction == LEFT) {
-                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+                // Si on trouve une direction pour marquer des points, alors on s'oriente puis on déplace vers
+                if (informationDirectionToScore.direction != NOT_FOUND) {
+
+                    fprintf(stderr, "TORTANK A TROUVE DES CASES NOIRES A PROXIMITE\n \n");
+
+
+                    // Si on a pas la bonne orientation alors on doit tourner
+                    if (informationDirectionToScore.direction != getMyPlayer(&game)->turtle.direction) {
+                        // On se va pas faire une rotation pour rien, on ne fait une rotation que si on peut faire un mouvement après
+                        if (nbPlays == 3) {
+                            fprintf(stdout, "\n");
+                            fflush(stdout);
+                            break;
+                        }
+                        fprintf(stderr, "TORTANK DOIT SE TOURNER \n \n");
+                        if (getMyPlayer(&game)->turtle.direction == RIGHT &&
+                            informationDirectionToScore.direction == DOWN) {
+                            fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+                        } else if (getMyPlayer(&game)->turtle.direction == RIGHT &&
+                                   informationDirectionToScore.direction == UP) {
+                            fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+                        } else if (getMyPlayer(&game)->turtle.direction == LEFT &&
+                                   informationDirectionToScore.direction == DOWN) {
+                            fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+                        } else if (getMyPlayer(&game)->turtle.direction == LEFT &&
+                                   informationDirectionToScore.direction == UP) {
+                            fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+                        } else if (getMyPlayer(&game)->turtle.direction == UP &&
+                                   informationDirectionToScore.direction == RIGHT) {
+                            fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+                        } else if (getMyPlayer(&game)->turtle.direction == UP &&
+                                   informationDirectionToScore.direction == LEFT) {
+                            fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+                        } else if (getMyPlayer(&game)->turtle.direction == DOWN &&
+                                   informationDirectionToScore.direction == RIGHT) {
+                            fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+                        } else if (getMyPlayer(&game)->turtle.direction == DOWN &&
+                                   informationDirectionToScore.direction == LEFT) {
+                            fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+                        }
+                        getMyPlayer(&game)->turtle.direction = informationDirectionToScore.direction;
+                        nbPlays++;
                     }
-                }
-                fprintf(stdout, "MOVE %d\n", getNumberCellsBetweenTwoPositions(getMyPlayer(game).turtle.position,
-                                                                               informationDirectionToScore.lastBlackCellUnchecked,
-                                                                               informationDirectionToScore.direction));
-                fflush(stdout);
-            } else {
-                InformationFromPosition informationPositionToTeleport;
-                informationPositionToTeleport.possibleScore = 0;
-                informationPositionToTeleport.position.x = -1;
-                informationPositionToTeleport.position.y = -1;
-                for (int i = 0; i < NUMBER_LINES; i++) {
-                    for (int j = 0; j < NUMBER_COLUMNS; j++) {
-                        if (game.grid[i][j] == BLACK && game.gridChecked[i][j] == FALSE) {
-                            Position positionToLook = {i, j};
-                            InformationFromPosition interestingInformation = directionToScorePoints(game,
-                                                                                                    positionToLook);
-                            if (interestingInformation.possibleScore >= informationPositionToTeleport.possibleScore) {
-                                informationPositionToTeleport = interestingInformation;
+
+
+                    fprintf(stdout, "MOVE %d;", getNumberCellsBetweenTwoPositions(&game,
+                                                                                  informationDirectionToScore.lastBlackCellUnchecked,
+                                                                                  informationDirectionToScore.direction));
+                    fflush(stdout);
+
+                    nbPlays++;
+                    if (nbPlays == 4) {
+                        fprintf(stdout, "\n");
+                        fflush(stdout);
+                        break;
+                    }
+
+                } else {
+                    InformationFromPosition informationPositionToTeleport;
+                    informationPositionToTeleport.possibleScore = 0;
+                    informationPositionToTeleport.position.x = -1;
+                    informationPositionToTeleport.position.y = -1;
+                    for (int i = 0; i < NUMBER_LINES; i++) {
+                        for (int j = 0; j < NUMBER_COLUMNS; j++) {
+                            if (game.grid[i][j] == BLACK && game.gridChecked[i][j] == FALSE) {
+                                Position positionToLook = {i, j};
+                                InformationFromPosition interestingInformation = directionToScorePoints(game,
+                                                                                                        positionToLook);
+                                if (interestingInformation.possibleScore >=
+                                    informationPositionToTeleport.possibleScore) {
+                                    informationPositionToTeleport = interestingInformation;
+                                }
                             }
                         }
                     }
-                }
 
-                if (informationPositionToTeleport.position.x != -1 && informationPositionToTeleport.position.y != -1) {
-                    fprintf(stderr, "TORTANK VA SE TELEPORTER\n \n");
-                    fprintf(stdout, "TELEPORT %d %d;", informationPositionToTeleport.position.x,
-                            informationPositionToTeleport.position.y);
-                    fflush(stdout);
-                    if (getMyPlayer(game).turtle.penIsDown == FALSE) {
-                        fprintf(stdout, "SWITCHPEN\n");
+                    if (informationPositionToTeleport.position.x != -1 &&
+                        informationPositionToTeleport.position.y != -1) {
+                        fprintf(stderr, "TORTANK VA SE TELEPORTER\n \n");
+                        fprintf(stdout, "TELEPORT %d %d;", informationPositionToTeleport.position.x,
+                                informationPositionToTeleport.position.y);
+                        getMyPlayer(&game)->turtle.position.x = informationPositionToTeleport.position.x;
+                        getMyPlayer(&game)->turtle.position.y = informationPositionToTeleport.position.y;
                         fflush(stdout);
+                        nbPlays++;
+                        if (nbPlays == 4) {
+                            fprintf(stdout, "\n");
+                            break;
+                        }
+
+                        if (getMyPlayer(&game)->turtle.penIsDown == FALSE) {
+                            fprintf(stdout, "SWITCHPEN\n");
+                            fflush(stdout);
+                            break;
+                        } else {
+                            fprintf(stdout, "PASS\n");
+                            fflush(stdout);
+                            break;
+                        }
                     } else {
                         fprintf(stdout, "PASS\n");
                         fflush(stdout);
+                        break;
                     }
-                } else {
-                    fprintf(stdout, "PASS\n");
-                    fflush(stdout);
                 }
             }
         } else {
             fprintf(stdout, "PASS\n");
             fflush(stdout);
+            break;
         }
         nbTurns++;
     }
@@ -576,7 +629,7 @@ InformationFromPosition directionToScorePoints(Game game, Position position) {
     returnedInformation.direction = NOT_FOUND;
     returnedInformation.possibleScore = 0;
     returnedInformation.position = position;
-    int myDirection = getMyPlayer(game).turtle.direction;
+    int myDirection = getMyPlayer(&game)->turtle.direction;
     /*
      * On regarde dans toutes les directions le score possible
      * et on retient le meilleur score, on va dans la direction du meilleure score
@@ -591,11 +644,11 @@ InformationFromPosition directionToScorePoints(Game game, Position position) {
         returnedInformation = informationRight;
     }
     InformationFromPosition informationUp = informationUP(game, position);
-    if (informationUp.possibleScore > returnedInformation.possibleScore && myDirection != UP) {
+    if (informationUp.possibleScore > returnedInformation.possibleScore && myDirection != DOWN) {
         returnedInformation = informationUp;
     }
     InformationFromPosition informationDown = informationDOWN(game, position);
-    if (informationDown.possibleScore > returnedInformation.possibleScore && myDirection != DOWN) {
+    if (informationDown.possibleScore > returnedInformation.possibleScore && myDirection != UP) {
         returnedInformation = informationDown;
     }
     return returnedInformation;
@@ -641,7 +694,7 @@ void askInformationInTheDirection(Game *game, int direction, Position position) 
             game->grid[position.x][i] = WHITE;
         }
         game->grid[position.x][cellRevealed] = BLACK;
-    } else if (direction == UP) {
+    } else if (direction == DOWN) {
         fprintf(stdout, "REVEALC %d %d\n", position.y, MOST_UP);
         fflush(stdout);
         fscanf(stdin, "%d", &cellRevealed);
@@ -649,7 +702,7 @@ void askInformationInTheDirection(Game *game, int direction, Position position) 
             game->grid[i][position.y] = WHITE;
         }
         game->grid[cellRevealed][position.y] = BLACK;
-    } else if (direction == DOWN) {
+    } else if (direction == UP) {
         fprintf(stdout, "REVEALC %d %d\n", position.y, MOST_DOWN);
         fflush(stdout);
         fscanf(stdin, "%d", &cellRevealed);
@@ -669,11 +722,12 @@ void askInformationInTheDirection(Game *game, int direction, Position position) 
     updateGrid(game);
 }
 
-Player getMyPlayer(Game game) {
-    Player myPlayer;
-    for (int i = 0; i < game.numberPlayers; i++) {
-        if (game.players[i].number == game.myNumero) {
-            myPlayer = game.players[i];
+Player *getMyPlayer(Game *game) {
+    Player *myPlayer;
+    for (int i = 0; i < game->numberPlayers; i++) {
+        if (game->players[i].number == game->myNumero) {
+            myPlayer = &game->players[i];
+            break;
         }
     }
     return myPlayer;
@@ -727,39 +781,15 @@ InformationFromPosition informationRIGHT(Game game, Position position) {
     return informationRIGHT;
 }
 
-InformationFromPosition informationUP(Game game, Position position) {
-    InformationFromPosition informationUP;
-    informationUP.position = position;
-    informationUP.direction = UP;
-    informationUP.possibleScore = 0;
-    informationUP.numberUnknown = 0;
-    for (int i = position.x + 1; i < NUMBER_LINES; i++) {
-        /*
-         * Si au-dessus de nous, on a une case noire qui n'est pas déjà cochée
-         * alors on augmente le score de gauche de 1
-         */
-        if (game.grid[i][position.y] == BLACK
-            && game.gridChecked[i][position.y] == FALSE) {
-            informationUP.possibleScore++;
-            informationUP.lastBlackCellUnchecked.x = i;
-            informationUP.lastBlackCellUnchecked.y = position.y;
-        }
-        if (game.grid[i][position.y] == UNKNOWN) {
-            informationUP.numberUnknown++;
-        }
-    }
-    return informationUP;
-}
-
 InformationFromPosition informationDOWN(Game game, Position position) {
     InformationFromPosition informationDOWN;
     informationDOWN.position = position;
     informationDOWN.direction = DOWN;
     informationDOWN.possibleScore = 0;
     informationDOWN.numberUnknown = 0;
-    for (int i = position.x; i >= 0; i--) {
+    for (int i = position.x + 1; i < NUMBER_LINES; i++) {
         /*
-         * Si en-dessous de nous, on a une case noire qui n'est pas déjà cochée
+         * Si au-dessus de nous, on a une case noire qui n'est pas déjà cochée
          * alors on augmente le score de gauche de 1
          */
         if (game.grid[i][position.y] == BLACK
@@ -775,20 +805,61 @@ InformationFromPosition informationDOWN(Game game, Position position) {
     return informationDOWN;
 }
 
-int getNumberCellsBetweenTwoPositions(Position from, Position to, int direction) {
+InformationFromPosition informationUP(Game game, Position position) {
+    InformationFromPosition informationUP;
+    informationUP.position = position;
+    informationUP.direction = UP;
+    informationUP.possibleScore = 0;
+    informationUP.numberUnknown = 0;
+    for (int i = position.x; i >= 0; i--) {
+        /*
+         * Si en-dessous de nous, on a une case noire qui n'est pas déjà cochée
+         * alors on augmente le score de gauche de 1
+         */
+        if (game.grid[i][position.y] == BLACK
+            && game.gridChecked[i][position.y] == FALSE) {
+            informationUP.possibleScore++;
+            informationUP.lastBlackCellUnchecked.x = i;
+            informationUP.lastBlackCellUnchecked.y = position.y;
+        }
+        if (game.grid[i][position.y] == UNKNOWN) {
+            informationUP.numberUnknown++;
+        }
+    }
+    return informationUP;
+}
+
+int getNumberCellsBetweenTwoPositions(Game *game, Position to, int direction) {
     int number = 0;
+    Position *from = &getMyPlayer(game)->turtle.position;
     switch (direction) {
         case LEFT:
-            number = from.y - to.y;
+            number = from->y - to.y;
+            for (int i = to.y; i <= from->y; i++) {
+                game->gridChecked[to.x][i] = TRUE;
+            }
+            from->y -= number;
             break;
         case RIGHT:
-            number = to.y - from.y;
-            break;
-        case DOWN:
-            number = from.x - to.x;
+            number = to.y - from->y;
+            for (int i = from->y; i <= to.y; i++) {
+                game->gridChecked[to.x][i] = TRUE;
+            }
+            from->y += number;
             break;
         case UP:
-            number = to.x - from.x;
+            number = from->x - to.x;
+            for (int i = to.x; i <= from->x; i++) {
+                game->gridChecked[i][to.y] = TRUE;
+            }
+            from->x -= number;
+            break;
+        case DOWN:
+            number = to.x - from->x;
+            for (int i = from->x; i <= to.x; i++) {
+                game->gridChecked[i][to.y] = TRUE;
+            }
+            from->x += number;
             break;
     }
     return number;
