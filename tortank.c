@@ -341,11 +341,6 @@ int main(void) {
             while (nbPlays < 4) {
                 InformationFromPosition informationDirectionToScore = directionToScorePoints(game, getMyPlayer(
                         &game)->turtle.position);
-                fprintf(stderr, "INFORMATION TO SCORE: points:%d, direction:%d \n",
-                        informationDirectionToScore.possibleScore,
-                        informationDirectionToScore.direction
-                );
-
                 // Si on trouve une direction pour marquer des points, alors on s'oriente puis on déplace vers
                 if (informationDirectionToScore.direction != NOT_FOUND) {
 
@@ -433,6 +428,7 @@ int main(void) {
                         nbPlays++;
                         if (nbPlays == 4) {
                             fprintf(stdout, "\n");
+                            fflush(stdout);
                             break;
                         }
 
@@ -453,11 +449,10 @@ int main(void) {
                 }
             }
         } else {
+            fprintf(stderr, "TORTANK EST PARALYSE \n");
             fprintf(stdout, "PASS\n");
             fflush(stdout);
-            break;
         }
-        nbTurns++;
     }
     return 0;
 }
