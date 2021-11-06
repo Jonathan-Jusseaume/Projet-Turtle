@@ -327,6 +327,11 @@ int main(void) {
 
         // On regarde si on est paralysé afin de savoir si on peut bouger
         int isParalyzed = checkIfParalyzed(game);
+
+        for (int i = 0; i < NUMBER_LINES; i++) {
+            displayArray(game.grid[i], NUMBER_COLUMNS);
+        }
+
         if (isParalyzed == FALSE) {
             InformationFromPosition informationDirectionToScore = directionToScorePoints(game, getMyPlayer(
                     game).turtle.position);
@@ -367,6 +372,11 @@ int main(void) {
                                                                                informationDirectionToScore.direction));
                 fflush(stdout);
             } else {
+
+                /*
+                 * On cherche une information où se téléporter, on va rechercher les informations à partir des cases noires
+                 * et regarder où c'est le plus intéressant
+                 */
                 InformationFromPosition informationPositionToTeleport;
                 informationPositionToTeleport.possibleScore = 0;
                 informationPositionToTeleport.position.x = -1;
@@ -389,12 +399,28 @@ int main(void) {
                     fprintf(stdout, "TELEPORT %d %d;", informationPositionToTeleport.position.x,
                             informationPositionToTeleport.position.y);
                     fflush(stdout);
+                    // Au premier tour on met notre stylo disponible
                     if (getMyPlayer(game).turtle.penIsDown == FALSE) {
                         fprintf(stdout, "SWITCHPEN\n");
                         fflush(stdout);
                     } else {
-                        fprintf(stdout, "PASS\n");
-                        fflush(stdout);
+                        // Si on est déjà dans la bonne direction alors autant marquer des points
+
+                        if (informationPositionToTeleport.direction == getMyPlayer(game).turtle.direction) {
+                            int scorePoints = getNumberCellsBetweenTwoPositions(informationPositionToTeleport.position,
+                                                                                informationPositionToTeleport.lastBlackCellUnchecked,
+                                                                                informationPositionToTeleport.direction);
+                            if (scorePoints > 0) {
+                                fprintf(stdout, "MOVE %d\n", scorePoints);
+                                fflush(stdout);
+                            } else {
+                                fprintf(stdout, "PASS\n");
+                                fflush(stdout);
+                            }
+                        } else {
+                            fprintf(stdout, "PASS\n");
+                            fflush(stdout);
+                        }
                     }
                 } else {
                     fprintf(stdout, "PASS\n");
