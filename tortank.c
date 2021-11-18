@@ -328,9 +328,6 @@ int main(void) {
         // On regarde si on est paralysé afin de savoir si on peut bouger
         int isParalyzed = checkIfParalyzed(game);
 
-        for (int i = 0; i < NUMBER_LINES; i++) {
-            displayArray(game.grid[i], NUMBER_COLUMNS);
-        }
 
         if (isParalyzed == FALSE) {
             InformationFromPosition informationDirectionToScore = directionToScorePoints(game, getMyPlayer(
