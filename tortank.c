@@ -372,16 +372,16 @@ int main(void) {
              * On trouve notre position
              */
             if (bestPositionInformation.direction != NOT_FOUND) {
-                if (getMyPlayer(game).turtle.penIsDown == FALSE) {
-                    fprintf(stdout, "SWITCHPEN;");
-                    fflush(stdout);
-                }
                 // Si la meilleure position n'est pas la notre alors on se téléporte
                 if (bestPositionInformation.position.x != getMyPlayer(game).turtle.position.x
                     || bestPositionInformation.position.y != getMyPlayer(game).turtle.position.y) {
                     fprintf(stderr, "TORTANK VA SE TELEPORTER\n \n");
                     fprintf(stdout, "TELEPORT %d %d;", bestPositionInformation.position.x,
                             bestPositionInformation.position.y);
+                    fflush(stdout);
+                }
+                if (getMyPlayer(game).turtle.penIsDown == FALSE) {
+                    fprintf(stdout, "SWITCHPEN;");
                     fflush(stdout);
                 }
                 // On fait une rotation si on est pas dans la bonne direction
