@@ -279,9 +279,9 @@ int main(void) {
             } else {
                 // Comportement au premier tour
                 if (nbTurns == 0) {
-                    // On tire au sort notre ligne ou notre colonne entre 3 et 9
+                    // On tire au sort notre ligne ou notre colonne entre 4 et 6
                     srand(time(NULL));
-                    int nbColumnOrLine = rand() % ((9 + 1) - 3) + 3;
+                    int nbColumnOrLine = rand() % ((6 + 1) - 4) + 4;
 
                     // On demande des informations à l'opposé de notre position
                     Position randomPosition = {nbColumnOrLine, nbColumnOrLine};
