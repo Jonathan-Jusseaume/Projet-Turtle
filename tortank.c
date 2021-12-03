@@ -368,9 +368,6 @@ int main(void) {
                     }
                 }
             }
-            fprintf(stderr, "Nombre de points: %d, Position: x=%d, y=%d \n", bestPositionInformation.possibleScore,
-                    bestPositionInformation.position.x,
-                    bestPositionInformation.position.y);
             /*
              * On trouve notre position
              */
