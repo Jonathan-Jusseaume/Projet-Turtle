@@ -350,7 +350,7 @@ int main(void) {
                                 game).turtle.position.x &&
                             positionToLook.y == getMyPlayer(
                                     game).turtle.position.y) {
-                            interestingInformation.possibleScore += 2;
+                            interestingInformation.possibleScore += 3;
                         }
 
                         /*
@@ -368,6 +368,9 @@ int main(void) {
                     }
                 }
             }
+            fprintf(stderr, "Nombre de points: %d, Position: x=%d, y=%d \n", bestPositionInformation.possibleScore,
+                    bestPositionInformation.position.x,
+                    bestPositionInformation.position.y);
             /*
              * On trouve notre position
              */
@@ -720,7 +723,7 @@ InformationFromPosition informationLEFT(Game game, Position position) {
          */
         if (game.grid[position.x][i] == BLACK
             && game.gridChecked[position.x][i] == FALSE) {
-            informationLEFT.possibleScore++;
+            informationLEFT.possibleScore+=2;
             informationLEFT.lastBlackCellUnchecked.x = position.x;
             informationLEFT.lastBlackCellUnchecked.y = i;
         }
@@ -744,7 +747,7 @@ InformationFromPosition informationRIGHT(Game game, Position position) {
          */
         if (game.grid[position.x][i] == BLACK
             && game.gridChecked[position.x][i] == FALSE) {
-            informationRIGHT.possibleScore++;
+            informationRIGHT.possibleScore+=2;
             informationRIGHT.lastBlackCellUnchecked.x = position.x;
             informationRIGHT.lastBlackCellUnchecked.y = i;
         }
@@ -768,7 +771,7 @@ InformationFromPosition informationDOWN(Game game, Position position) {
          */
         if (game.grid[i][position.y] == BLACK
             && game.gridChecked[i][position.y] == FALSE) {
-            informationDOWN.possibleScore++;
+            informationDOWN.possibleScore+=2;
             informationDOWN.lastBlackCellUnchecked.x = i;
             informationDOWN.lastBlackCellUnchecked.y = position.y;
         }
@@ -792,7 +795,7 @@ InformationFromPosition informationUP(Game game, Position position) {
          */
         if (game.grid[i][position.y] == BLACK
             && game.gridChecked[i][position.y] == FALSE) {
-            informationUP.possibleScore++;
+            informationUP.possibleScore+=2;
             informationUP.lastBlackCellUnchecked.x = i;
             informationUP.lastBlackCellUnchecked.y = position.y;
         }
