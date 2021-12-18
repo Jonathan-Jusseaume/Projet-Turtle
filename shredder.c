@@ -333,7 +333,7 @@ int main(void) {
             * On cherche une position depuis laquelle partir pour marquer des points
             */
             information_from_position best_position_to_score;
-            best_position_to_score.possible_score = 0;
+            best_position_to_score.possible_score = -1;
             best_position_to_score.position.x = -1;
             best_position_to_score.position.y = -1;
             for (int i = 0; i < NUMBER_LINES; i++) {
@@ -344,17 +344,17 @@ int main(void) {
                                                                                           position_to_look,
                                                                                           my_player->turtle.direction);
                         /*
-                         * Si on est sur notre position on supprime 3 points car on va se téléporter
+                         * Si on est pas sur notre position on supprime 3 points car on va se téléporter
                          */
-                        if (position_to_look.x == my_player->turtle.position.x &&
-                            position_to_look.y == my_player->turtle.position.y) {
+                        if (position_to_look.x != my_player->turtle.position.x ||
+                            position_to_look.y != my_player->turtle.position.y) {
                             information.possible_score -= 3;
                         }
 
                         /*
-                         * Si on est déjà dans la bonne direction, on retire 1 point car notre ROTATE va nous couter cela
+                         * Si on est pas déjà dans la bonne direction, on retire 1 point car notre ROTATE va nous couter cela
                          */
-                        if (information.direction == my_player->turtle.direction) {
+                        if (information.direction != my_player->turtle.direction) {
                             information.possible_score -= 1;
                         }
 
@@ -368,6 +368,7 @@ int main(void) {
              * On trouve notre position
              */
             if (best_position_to_score.direction != NOT_FOUND) {
+                fprintf(stderr, "SHREDDER VA MARQUER %d POINTS \n", best_position_to_score.possible_score);
                 // Si la meilleure position n'est pas la notre alors on se téléporte
                 if (best_position_to_score.position.x != my_player->turtle.position.x
                     || best_position_to_score.position.y != my_player->turtle.position.y) {
