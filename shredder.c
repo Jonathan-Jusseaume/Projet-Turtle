@@ -1,6 +1,57 @@
 /*
  * Fichier crée par JUSSEAUME Jonathan le 21/10/2021
  * IA Shredder permettant de jouer à TURTLE PICROSS
+ *
+ * Explication de l'algorithme à la date du 18 décembre:
+ * Pseudo code du MAIN
+ *      MAIN
+ *          Récupérer les informations de la partie (nombre joueurs, mon identifiant)
+ *          A chaque tour faire:
+ *              Récupérer les informations envoyées à chaque début de tour
+ *              Compléter la grille en déduisant les cases noires de celles déjà connues
+ *              Ne pas aveulger
+ *              Récupérer l'information concernant l'aveuglement
+ *              Si on est aveuglé:
+ *                  Ne pas révéler de cases
+ *              Sinon:
+ *                  Chercher la direction autour de la position de mon joueur où il y a le plus de cases inconnues
+ *                  Si cette direction existe:
+ *                      Révéler la case dans cette direction à partir de la position de mon joueur
+ *                  Sinon
+ *                      Si c'est le premier tour:
+ *                          Révéler une sur une ligne ou une colonne au hasard selon l'orientation de notre tortue (ex: si la tortue regarde à droite, on révèle la case la plus à droite d'une ligne)
+ *                      Sinon:
+ *                          Chercher parmi toutes les lignes et toutes les colonnes, la direction et la position où il y a le plus de cases noires
+ *                              Si une telle direction et position existe:
+ *                                  Révéler les informations à cet endroit
+ *                              Sinon
+ *                                  Ne rien révéler
+ *               Compléter la grille en déduisant les cases noires de celles déjà connues
+ *               Ne pas paralyser
+ *               Récupérer l'information concernant la paralysie
+ *               Si on est paralysé:
+ *                  Passer son tour
+ *               Sinon:
+ *                  Position p, Direction d = INCONNU
+ *                  Parcourir toutes les cases de la grille
+ *                      Si c'est une case noire:
+ *                          Chercher la direction à partir de cette case où on peut marquer le plus de points (retirer 3 points si la position nécessite une téléportation et 1 si elle nécessite une rotation)
+ *                          Si nombre de points possibles dans cette direction est supérieure à celui à la Position p dans la Direction d:
+ *                              p <- position de la case noire actuelle
+ *                              d <- direction à partir de la position p
+ *                 Si p et d sont inconnues:
+ *                      Passer son tour
+ *                 Sinon:
+ *                      Si p est différente de la position de mon joueur
+ *                          Se téléporter à la position p
+ *                      Si le crayon de mon joueur n'est pas baissé
+ *                          Baisser son crayon
+ *                      Si d est différente de la direction de mon joueur
+ *                          Se tourner pour atteindre cette direction
+ *                      Se déplacer du nombre de cases nécessaire pour marquer les points
+ *
+ *
+ *
  */
 
 // Les librairies
@@ -213,6 +264,33 @@ information_from_position information_up(game game, position position);
  */
 int get_number_cells_between_two_positions(position from, position to, int direction);
 
+/*
+ * Renvoie les informations concernant la position vers laquelle il y a le plus de cases inconnues parmi toutes les positions possibles
+ * et qui est donc une position où révéler de l'information serait pertinent.
+ * La direction de information_from_position vaut UNKNOWN si on a pas trouvé de position intéressante
+ */
+information_from_position search_best_position_to_reveal(game game);
+
+/*
+ * Renvoie les informations concernant la position vers laquelle il y a le plus de points à marquer parmi toutes les positions possibles
+ * et qui est donc une position où aller serait intéressant pour marquer des points.
+ * La direction de information_from_position vaut UNKNOWN si on a pas trouvé de position intéressante
+ */
+information_from_position search_best_position_to_score(game game, player *my_player);
+
+/*
+ * Téléporte à la position passée en paramètre
+ */
+void teleport_to_position(position position);
+
+/*
+ * Fait en sorte que notre tortue tourne pour passer de la direction passé en premier paramètre à la direction
+ * passé en second paramètre.
+ * Il ne peut y avoir qu'un quart de tour d'écart entre la from_direction et la to_direction.
+ * Par exemple, si on passe LEFT et RIGHT en paramètre alors la tortue ne tournera pas.
+ */
+void rotate_to_direction(direction from_direction, direction to_direction);
+
 
 /*
  * Main de l'application, il démarre par une initialisation de la partie,
@@ -284,20 +362,7 @@ int main(void) {
 
                     fprintf(stderr, "SHREDDER DEMANDE UNE INFORMATION AU HASARD \n \n");
                 } else {
-                    information_from_position best_position_to_reveal;
-                    best_position_to_reveal.number_unknown = 0;
-                    best_position_to_reveal.direction = NOT_FOUND;
-                    for (int origine = 1; origine < NUMBER_LINES - 1; origine++) {
-                        information_from_position information = direction_to_look_forward(game,
-                                                                                          (position) {
-                                                                                                  origine,
-                                                                                                  6});
-
-                        if (information.direction != NOT_FOUND &&
-                            information.number_unknown >= best_position_to_reveal.number_unknown) {
-                            best_position_to_reveal = information;
-                        }
-                    }
+                    information_from_position best_position_to_reveal = search_best_position_to_reveal(game);
                     if (best_position_to_reveal.direction != NOT_FOUND) {
                         ask_information_in_the_direction(&game,
                                                          best_position_to_reveal.direction,
@@ -328,54 +393,18 @@ int main(void) {
 
 
         if (isParalyzed == FALSE) {
-
             /*
             * On cherche une position depuis laquelle partir pour marquer des points
             */
-            information_from_position best_position_to_score;
-            best_position_to_score.possible_score = -1;
-            best_position_to_score.position.x = -1;
-            best_position_to_score.position.y = -1;
-            for (int i = 0; i < NUMBER_LINES; i++) {
-                for (int j = 0; j < NUMBER_COLUMNS; j++) {
-                    if (game.grid[i][j] == BLACK) {
-                        position position_to_look = {i, j};
-                        information_from_position information = direction_to_score_points(game,
-                                                                                          position_to_look,
-                                                                                          my_player->turtle.direction);
-                        /*
-                         * Si on est pas sur notre position on supprime 3 points car on va se téléporter
-                         */
-                        if (position_to_look.x != my_player->turtle.position.x ||
-                            position_to_look.y != my_player->turtle.position.y) {
-                            information.possible_score -= 3;
-                        }
+            information_from_position best_position_to_score = search_best_position_to_score(game, my_player);
 
-                        /*
-                         * Si on est pas déjà dans la bonne direction, on retire 1 point car notre ROTATE va nous couter cela
-                         */
-                        if (information.direction != my_player->turtle.direction) {
-                            information.possible_score -= 1;
-                        }
-
-                        if (information.possible_score >= best_position_to_score.possible_score) {
-                            best_position_to_score = information;
-                        }
-                    }
-                }
-            }
-            /*
-             * On trouve notre position
-             */
+            // Si cette position existe
             if (best_position_to_score.direction != NOT_FOUND) {
                 fprintf(stderr, "SHREDDER VA MARQUER %d POINTS \n", best_position_to_score.possible_score);
                 // Si la meilleure position n'est pas la notre alors on se téléporte
                 if (best_position_to_score.position.x != my_player->turtle.position.x
                     || best_position_to_score.position.y != my_player->turtle.position.y) {
-                    fprintf(stderr, "SHREDDER VA SE TELEPORTER\n \n");
-                    fprintf(stdout, "TELEPORT %d %d;", best_position_to_score.position.x,
-                            best_position_to_score.position.y);
-                    fflush(stdout);
+                    teleport_to_position(best_position_to_score.position);
                 }
                 if (my_player->turtle.pen_is_down == FALSE) {
                     fprintf(stdout, "SWITCHPEN;");
@@ -384,31 +413,7 @@ int main(void) {
                 // On fait une rotation si on est pas dans la bonne direction
                 if (best_position_to_score.direction != my_player->turtle.direction) {
                     fprintf(stderr, "SHREDDER DOIT SE TOURNER \n \n");
-                    if (my_player->turtle.direction == RIGHT && best_position_to_score.direction == DOWN) {
-                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
-                    } else if (my_player->turtle.direction == RIGHT &&
-                               best_position_to_score.direction == UP) {
-                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
-                    } else if (my_player->turtle.direction == LEFT &&
-                               best_position_to_score.direction == DOWN) {
-                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
-                    } else if (my_player->turtle.direction == LEFT &&
-                               best_position_to_score.direction == UP) {
-                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
-                    } else if (my_player->turtle.direction == UP &&
-                               best_position_to_score.direction == RIGHT) {
-                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
-                    } else if (my_player->turtle.direction == UP &&
-                               best_position_to_score.direction == LEFT) {
-                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
-                    } else if (my_player->turtle.direction == DOWN &&
-                               best_position_to_score.direction == RIGHT) {
-                        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
-                    } else if (my_player->turtle.direction == DOWN &&
-                               best_position_to_score.direction == LEFT) {
-                        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
-                    }
-                    fflush(stdout);
+                    rotate_to_direction(my_player->turtle.direction, best_position_to_score.direction);
                 }
                 int number_cells = get_number_cells_between_two_positions(best_position_to_score.position,
                                                                           best_position_to_score.position_last_black_cell_unchecked,
@@ -804,4 +809,106 @@ int get_number_cells_between_two_positions(position from, position to, int direc
             break;
     }
     return number;
+}
+
+information_from_position search_best_position_to_reveal(game game) {
+    information_from_position best_position_to_reveal;
+    best_position_to_reveal.number_unknown = 0;
+    best_position_to_reveal.direction = NOT_FOUND;
+    for (int origine = 1; origine < NUMBER_LINES - 1; origine++) {
+        information_from_position information = direction_to_look_forward(game,
+                                                                          (position) {
+                                                                                  origine,
+                                                                                  NUMBER_COLUMNS / 2});
+
+        if (information.direction != NOT_FOUND &&
+            information.number_unknown >= best_position_to_reveal.number_unknown) {
+            best_position_to_reveal = information;
+        }
+    }
+    for (int origine = 1; origine < NUMBER_COLUMNS - 1; origine++) {
+        information_from_position information = direction_to_look_forward(game,
+                                                                          (position) {
+                                                                                  NUMBER_LINES / 2,
+                                                                                  origine});
+
+        if (information.direction != NOT_FOUND &&
+            information.number_unknown >= best_position_to_reveal.number_unknown) {
+            best_position_to_reveal = information;
+        }
+    }
+    return best_position_to_reveal;
+}
+
+information_from_position search_best_position_to_score(game game, player *my_player) {
+    information_from_position best_position_to_score;
+    best_position_to_score.possible_score = -1;
+    best_position_to_score.position.x = -1;
+    best_position_to_score.position.y = -1;
+    for (int i = 0; i < NUMBER_LINES; i++) {
+        for (int j = 0; j < NUMBER_COLUMNS; j++) {
+            if (game.grid[i][j] == BLACK) {
+                position position_to_look = {i, j};
+                information_from_position information = direction_to_score_points(game,
+                                                                                  position_to_look,
+                                                                                  my_player->turtle.direction);
+                /*
+                 * Si on est pas sur notre position on supprime 3 points car on va se téléporter
+                 */
+                if (position_to_look.x != my_player->turtle.position.x ||
+                    position_to_look.y != my_player->turtle.position.y) {
+                    information.possible_score -= 3;
+                }
+
+                /*
+                 * Si on est pas déjà dans la bonne direction, on retire 1 point car notre ROTATE va nous couter cela
+                 */
+                if (information.direction != my_player->turtle.direction) {
+                    information.possible_score -= 1;
+                }
+
+                if (information.possible_score >= best_position_to_score.possible_score) {
+                    best_position_to_score = information;
+                }
+            }
+        }
+    }
+    return best_position_to_score;
+}
+
+void teleport_to_position(position position) {
+    fprintf(stderr, "SHREDDER VA SE TELEPORTER A LA CASE %d %d \n \n",
+            position.x, position.y);
+    fprintf(stdout, "TELEPORT %d %d;", position.x,
+            position.y);
+    fflush(stdout);
+}
+
+
+void rotate_to_direction(direction from_direction, direction to_direction) {
+    if (from_direction == RIGHT && to_direction == DOWN) {
+        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+    } else if (from_direction == RIGHT &&
+               to_direction == UP) {
+        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+    } else if (from_direction == LEFT &&
+               to_direction == DOWN) {
+        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+    } else if (from_direction == LEFT &&
+               to_direction == UP) {
+        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+    } else if (from_direction == UP &&
+               to_direction == RIGHT) {
+        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+    } else if (from_direction == UP &&
+               to_direction == LEFT) {
+        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+    } else if (from_direction == DOWN &&
+               to_direction == RIGHT) {
+        fprintf(stdout, "ROTATE %d;", MOST_LEFT);
+    } else if (from_direction == DOWN &&
+               to_direction == LEFT) {
+        fprintf(stdout, "ROTATE %d;", MOST_RIGHT);
+    }
+    fflush(stdout);
 }
