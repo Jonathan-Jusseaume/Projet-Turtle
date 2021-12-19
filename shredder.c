@@ -116,6 +116,12 @@ typedef enum vertical_ask {
     MOST_DOWN = 0, MOST_UP = 1
 } vertical_ask;
 
+/*
+ * Variable globale définissant si lorsque l'on va au bout d'un déplacement dans une direction alors toutes
+ * les cases inconnues après cette direction sont des cases blanches.
+ */
+boolean GREEDY_MODE = TRUE;
+
 // Les structures
 
 /*
@@ -421,6 +427,17 @@ int main(void) {
                 if (number_cells > 0) {
                     fprintf(stdout, "MOVE %d\n", number_cells);
                     fflush(stdout);
+                    if (GREEDY_MODE == TRUE) {
+                        if (best_position_to_score.direction == RIGHT) {
+
+                        } else if (best_position_to_score.direction == LEFT) {
+
+                        } else if (best_position_to_score.direction == UP) {
+
+                        } else if (best_position_to_score.direction == DOWN) {
+
+                        }
+                    }
                 } else {
                     fprintf(stdout, "PASS\n");
                     fflush(stdout);
