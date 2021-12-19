@@ -272,7 +272,7 @@ int get_number_cells_between_two_positions(position from, position to, int direc
 
 /*
  * Renvoie les informations concernant la position vers laquelle il y a le plus de cases inconnues parmi toutes les positions possibles
- * et qui est donc une position où révéler de l'information serait pertinent.
+ * et qui est donc une position où révéler de l'information serait pertinent. On révèle forcément sur une ligne.
  * La direction de information_from_position vaut UNKNOWN si on a pas trouvé de position intéressante
  */
 information_from_position search_best_position_to_reveal(game game);
@@ -335,11 +335,6 @@ int main(void) {
         fflush(stdout);
 
         boolean is_blinded = check_if_blinded(game);
-
-        for (int i = 0; i < NUMBER_LINES; i++) {
-            display_array(game.grid[i], NUMBER_COLUMNS);
-        }
-
         // Si on est pas aveuglé alors on peut réveler une case
         if (is_blinded == FALSE) {
             information_from_position information_direction_to_go = direction_to_look_forward(game,
@@ -356,9 +351,9 @@ int main(void) {
             } else {
                 // Comportement au premier tour
                 if (nb_turns == 0) {
-                    // On tire au sort notre ligne ou notre colonne entre 4 et 6
+                    // On tire au sort notre ligne ou notre colonne entre 3 et 8
                     srand(time(NULL));
-                    int nb_column_or_row = rand() % ((6 + 1) - 4) + 4;
+                    int nb_column_or_row = rand() % ((8 + 1) - 3) + 3;
 
                     // On demande des informations à l'opposé de notre position
                     position random_position = {nb_column_or_row, nb_column_or_row};
@@ -393,11 +388,6 @@ int main(void) {
 
         // On regarde si on est paralysé afin de savoir si on peut bouger
         int isParalyzed = check_if_paralyzed(game);
-        for (int i = 0; i < NUMBER_LINES; i++) {
-            display_array(game.grid[i], NUMBER_COLUMNS);
-        }
-
-
         if (isParalyzed == FALSE) {
             /*
             * On cherche une position depuis laquelle partir pour marquer des points
@@ -429,13 +419,37 @@ int main(void) {
                     fflush(stdout);
                     if (GREEDY_MODE == TRUE) {
                         if (best_position_to_score.direction == RIGHT) {
-
+                            for (int i = best_position_to_score.position_last_black_cell_unchecked.y + 1;
+                                 i < NUMBER_COLUMNS; i++) {
+                                if (game.grid[best_position_to_score.position_last_black_cell_unchecked.x][i] ==
+                                    UNKNOWN) {
+                                    game.grid[best_position_to_score.position_last_black_cell_unchecked.x][i] = WHITE;
+                                }
+                            }
                         } else if (best_position_to_score.direction == LEFT) {
-
+                            for (int i = best_position_to_score.position_last_black_cell_unchecked.y - 1;
+                                 i >= 0; i--) {
+                                if (game.grid[best_position_to_score.position_last_black_cell_unchecked.x][i] ==
+                                    UNKNOWN) {
+                                    game.grid[best_position_to_score.position_last_black_cell_unchecked.x][i] = WHITE;
+                                }
+                            }
                         } else if (best_position_to_score.direction == UP) {
-
+                            for (int j = best_position_to_score.position_last_black_cell_unchecked.x - 1;
+                                 j >= 0; j--) {
+                                if (game.grid[j][best_position_to_score.position_last_black_cell_unchecked.y] ==
+                                    UNKNOWN) {
+                                    game.grid[j][best_position_to_score.position_last_black_cell_unchecked.y] = WHITE;
+                                }
+                            }
                         } else if (best_position_to_score.direction == DOWN) {
-
+                            for (int j = best_position_to_score.position_last_black_cell_unchecked.x + 1;
+                                 j < NUMBER_COLUMNS; j++) {
+                                if (game.grid[j][best_position_to_score.position_last_black_cell_unchecked.y] ==
+                                    UNKNOWN) {
+                                    game.grid[j][best_position_to_score.position_last_black_cell_unchecked.y] = WHITE;
+                                }
+                            }
                         }
                     }
                 } else {
@@ -837,17 +851,6 @@ information_from_position search_best_position_to_reveal(game game) {
                                                                           (position) {
                                                                                   origine,
                                                                                   NUMBER_COLUMNS / 2});
-
-        if (information.direction != NOT_FOUND &&
-            information.number_unknown >= best_position_to_reveal.number_unknown) {
-            best_position_to_reveal = information;
-        }
-    }
-    for (int origine = 1; origine < NUMBER_COLUMNS - 1; origine++) {
-        information_from_position information = direction_to_look_forward(game,
-                                                                          (position) {
-                                                                                  NUMBER_LINES / 2,
-                                                                                  origine});
 
         if (information.direction != NOT_FOUND &&
             information.number_unknown >= best_position_to_reveal.number_unknown) {
