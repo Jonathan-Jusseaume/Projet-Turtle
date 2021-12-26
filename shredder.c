@@ -863,6 +863,7 @@ information_from_position search_best_position_to_reveal(game game) {
 information_from_position search_best_position_to_score(game game, player *my_player) {
     information_from_position best_position_to_score;
     best_position_to_score.possible_score = -1;
+    best_position_to_score.direction = NOT_FOUND;
     best_position_to_score.position.x = -1;
     best_position_to_score.position.y = -1;
     for (int i = 0; i < NUMBER_LINES; i++) {
