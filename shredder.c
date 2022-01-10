@@ -14,18 +14,20 @@
  *              Si on est aveuglé:
  *                  Ne pas révéler de cases
  *              Sinon:
- *                  Chercher la direction autour de la position de mon joueur où il y a le plus de cases inconnues
- *                  Si cette direction existe:
- *                      Révéler la case dans cette direction à partir de la position de mon joueur
- *                  Sinon
- *                      Si c'est le premier tour:
- *                          Révéler une sur une ligne ou une colonne au hasard selon l'orientation de notre tortue (ex: si la tortue regarde à droite, on révèle la case la plus à droite d'une ligne)
+ *                  Si c'est le premier tour:
+ *                          Révéler une ligne ou colonne au hasard selon l'orientation de notre tortue (ex: si la tortue regarde à droite, on révèle la case la plus à gauche)
+ *                  Sinon:
+ *                      Position p, Direction d = INCONNU
+ *                      Parcourir toutes les cases de la grille (boucle avec une compléxité de 1536 consultations de cases du tableau dans le pire cas cf.description fonction)
+ *                          Si c'est une case noire:
+ *                              Chercher la direction à partir de cette case où il y a le plus de cases inconnues
+ *                              Si nombre de cases inconnues dans cette direction est supérieure à celui à la Position p dans la Direction d:
+ *                                  p <- position de la case noire actuelle
+ *                                  d <- direction à partir de la position p
+ *                      Si p et d ne sont plus inconnues
+ *                          Révéler à partir de la position p dans la direction d
  *                      Sinon:
- *                          Chercher parmi toutes les lignes et toutes les colonnes, la direction et la position où il y a le plus de cases noires
- *                              Si une telle direction et position existe:
- *                                  Révéler les informations à cet endroit
- *                              Sinon
- *                                  Ne rien révéler
+ *                          Ne pas révéler
  *               Compléter la grille en déduisant les cases noires de celles déjà connues
  *               Ne pas paralyser
  *               Récupérer l'information concernant la paralysie
@@ -33,7 +35,7 @@
  *                  Passer son tour
  *               Sinon:
  *                  Position p, Direction d = INCONNU
- *                  Parcourir toutes les cases de la grille
+ *                  Parcourir toutes les cases de la grille (boucle avec une compléxité de 1536 consultations de cases du tableau dans le pire cas cf.description fonction)
  *                      Si c'est une case noire:
  *                          Chercher la direction à partir de cette case où on peut marquer le plus de points (retirer 3 points si la position nécessite une téléportation et 1 si elle nécessite une rotation)
  *                          Si nombre de points possibles dans cette direction est supérieure à celui à la Position p dans la Direction d:
@@ -49,6 +51,8 @@
  *                      Si d est différente de la direction de mon joueur
  *                          Se tourner pour atteindre cette direction
  *                      Se déplacer du nombre de cases nécessaire pour marquer les points
+ *
+ *
  *
  *
  *
@@ -116,11 +120,6 @@ typedef enum vertical_ask {
     MOST_DOWN = 0, MOST_UP = 1
 } vertical_ask;
 
-/*
- * Variable globale définissant si lorsque l'on va au bout d'un déplacement dans une direction alors toutes
- * les cases inconnues après cette direction sont des cases blanches.
- */
-boolean GREEDY_MODE = TRUE;
 
 // Les structures
 
@@ -297,7 +296,6 @@ void teleport_to_position(position position);
  */
 void rotate_to_direction(direction from_direction, direction to_direction);
 
-
 /*
  * Main de l'application, il démarre par une initialisation de la partie,
  * puis notre IA va ensuite jouer les tours
@@ -337,44 +335,32 @@ int main(void) {
         boolean is_blinded = check_if_blinded(game);
         // Si on est pas aveuglé alors on peut réveler une case
         if (is_blinded == FALSE) {
-            information_from_position information_direction_to_go = direction_to_look_forward(game,
-                                                                                              my_player->turtle.position);
-            /*
-             * Si on a trouvé une direction intéressante depuis notre position, alors on va révélé l'information sur cette ligne
-             * ou colonne dans la direction qui nous intéresse
-             */
-            if (information_direction_to_go.direction != NOT_FOUND) {
-                fprintf(stderr, "SHREDDER DEMANDE DE L'INFORMATION PROCHE \n \n");
+            // Comportement au premier tour
+            if (nb_turns == 0) {
+                // On tire au sort notre ligne ou notre colonne entre 4 et 6
+                srand(time(NULL));
+                int nb_column_or_row = rand() % ((8 + 1) - 3) + 3;
+
+                // On demande des informations à l'opposé de notre position
+                position random_position = {nb_column_or_row, nb_column_or_row};
                 ask_information_in_the_direction(&game,
-                                                 information_direction_to_go.direction,
-                                                 my_player->turtle.position);
+                                                 (my_player->turtle.direction + 2) % 4,
+                                                 random_position);
+
+                fprintf(stderr, "SHREDDER DEMANDE UNE INFORMATION AU HASARD \n \n");
             } else {
-                // Comportement au premier tour
-                if (nb_turns == 0) {
-                    // On tire au sort notre ligne ou notre colonne entre 3 et 8
-                    srand(time(NULL));
-                    int nb_column_or_row = rand() % ((8 + 1) - 3) + 3;
-
-                    // On demande des informations à l'opposé de notre position
-                    position random_position = {nb_column_or_row, nb_column_or_row};
+                information_from_position best_position_to_reveal = search_best_position_to_reveal(game);
+                if (best_position_to_reveal.direction != NOT_FOUND) {
                     ask_information_in_the_direction(&game,
-                                                     (my_player->turtle.direction + 2) % 4,
-                                                     random_position);
-
-                    fprintf(stderr, "SHREDDER DEMANDE UNE INFORMATION AU HASARD \n \n");
+                                                     best_position_to_reveal.direction,
+                                                     best_position_to_reveal.position);
+                    fprintf(stderr, "SHREDDER REVELE DE L'INFORMATION DISTANTE \n \n");
                 } else {
-                    information_from_position best_position_to_reveal = search_best_position_to_reveal(game);
-                    if (best_position_to_reveal.direction != NOT_FOUND) {
-                        ask_information_in_the_direction(&game,
-                                                         best_position_to_reveal.direction,
-                                                         best_position_to_reveal.position);
-                        fprintf(stderr, "SHREDDER REVELE DE L'INFORMATION DISTANTE \n \n");
-                    } else {
-                        fprintf(stderr, "SHREDDER N'EST PAS ASSEZ INTELLIGENT POUR REVELER DE L'INFORMATION \n \n");
-                        fprintf(stdout, "NOREVEAL\n");
-                        fflush(stdout);
-                    }
+                    fprintf(stderr, "SHREDDER N'EST PAS ASSEZ INTELLIGENT POUR REVELER DE L'INFORMATION \n \n");
+                    fprintf(stdout, "NOREVEAL\n");
+                    fflush(stdout);
                 }
+
             }
         } else {
             fprintf(stderr, "SHREDDER EST AVEUGLE \n \n");
@@ -417,41 +403,6 @@ int main(void) {
                 if (number_cells > 0) {
                     fprintf(stdout, "MOVE %d\n", number_cells);
                     fflush(stdout);
-                    if (GREEDY_MODE == TRUE) {
-                        if (best_position_to_score.direction == RIGHT) {
-                            for (int i = best_position_to_score.position_last_black_cell_unchecked.y + 1;
-                                 i < NUMBER_COLUMNS; i++) {
-                                if (game.grid[best_position_to_score.position_last_black_cell_unchecked.x][i] ==
-                                    UNKNOWN) {
-                                    game.grid[best_position_to_score.position_last_black_cell_unchecked.x][i] = WHITE;
-                                }
-                            }
-                        } else if (best_position_to_score.direction == LEFT) {
-                            for (int i = best_position_to_score.position_last_black_cell_unchecked.y - 1;
-                                 i >= 0; i--) {
-                                if (game.grid[best_position_to_score.position_last_black_cell_unchecked.x][i] ==
-                                    UNKNOWN) {
-                                    game.grid[best_position_to_score.position_last_black_cell_unchecked.x][i] = WHITE;
-                                }
-                            }
-                        } else if (best_position_to_score.direction == UP) {
-                            for (int j = best_position_to_score.position_last_black_cell_unchecked.x - 1;
-                                 j >= 0; j--) {
-                                if (game.grid[j][best_position_to_score.position_last_black_cell_unchecked.y] ==
-                                    UNKNOWN) {
-                                    game.grid[j][best_position_to_score.position_last_black_cell_unchecked.y] = WHITE;
-                                }
-                            }
-                        } else if (best_position_to_score.direction == DOWN) {
-                            for (int j = best_position_to_score.position_last_black_cell_unchecked.x + 1;
-                                 j < NUMBER_COLUMNS; j++) {
-                                if (game.grid[j][best_position_to_score.position_last_black_cell_unchecked.y] ==
-                                    UNKNOWN) {
-                                    game.grid[j][best_position_to_score.position_last_black_cell_unchecked.y] = WHITE;
-                                }
-                            }
-                        }
-                    }
                 } else {
                     fprintf(stdout, "PASS\n");
                     fflush(stdout);
@@ -842,24 +793,38 @@ int get_number_cells_between_two_positions(position from, position to, int direc
     return number;
 }
 
+/*
+ * Pour chercher la meilleure position, on parcourt toutes les cases du tableau (64)
+ * Pour chaque case du tableau, si elle est noire alors, on regarde dans toutes les directions à partir
+ * de cette case et donc on parcourt toutes les cases dans chaque direction ce qui fait à chaque fois une ligne complète et une colonne complète soit (24 cases).
+ * Dans le pire des cas si toutes les cases sont noires alors on a:
+ *  64 * 24 soit 1536 consultations de cases
+ */
 information_from_position search_best_position_to_reveal(game game) {
     information_from_position best_position_to_reveal;
     best_position_to_reveal.number_unknown = 0;
     best_position_to_reveal.direction = NOT_FOUND;
-    for (int origine = 1; origine < NUMBER_LINES - 1; origine++) {
-        information_from_position information = direction_to_look_forward(game,
-                                                                          (position) {
-                                                                                  origine,
-                                                                                  NUMBER_COLUMNS / 2});
-
-        if (information.direction != NOT_FOUND &&
-            information.number_unknown >= best_position_to_reveal.number_unknown) {
-            best_position_to_reveal = information;
+    for (int x = 0; x < NUMBER_LINES; x++) {
+        for (int y = 0; y < NUMBER_COLUMNS; y++) {
+            if (game.grid[x][y] == BLACK) {
+                information_from_position information = direction_to_look_forward(game, (position) {x, y});
+                if (information.direction != NOT_FOUND &&
+                    information.number_unknown >= best_position_to_reveal.number_unknown) {
+                    best_position_to_reveal = information;
+                }
+            }
         }
     }
     return best_position_to_reveal;
 }
 
+/*
+ * Pour chercher la meilleure position, on parcourt toutes les cases du tableau (64)
+ * Pour chaque case du tableau, si elle est noire alors, on regarde dans toutes les directions à partir
+ * de cette case et donc on parcourt toutes les cases dans chaque direction ce qui fait à chaque fois une ligne complète et une colonne complète soit (24 cases).
+ * Dans le pire des cas si toutes les cases sont noires alors on a:
+ *  64 * 24 soit 1536 consultations de cases
+ */
 information_from_position search_best_position_to_score(game game, player *my_player) {
     information_from_position best_position_to_score;
     best_position_to_score.possible_score = -1;
@@ -873,17 +838,12 @@ information_from_position search_best_position_to_score(game game, player *my_pl
                 information_from_position information = direction_to_score_points(game,
                                                                                   position_to_look,
                                                                                   my_player->turtle.direction);
-                /*
-                 * Si on est pas sur notre position on supprime 3 points car on va se téléporter
-                 */
+                // Si on est pas sur notre position on supprime 3 points car on va se téléporter
                 if (position_to_look.x != my_player->turtle.position.x ||
                     position_to_look.y != my_player->turtle.position.y) {
                     information.possible_score -= 3;
                 }
-
-                /*
-                 * Si on est pas déjà dans la bonne direction, on retire 1 point car notre ROTATE va nous couter cela
-                 */
+                // Si on est pas déjà dans la bonne direction, on retire 1 point car notre ROTATE va nous couter cela
                 if (information.direction != my_player->turtle.direction) {
                     information.possible_score -= 1;
                 }
